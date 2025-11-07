@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db, collection, query, where, getDocs, limit } from '../../firebase';
 import OnlineIndicator from '../common/OnlineIndicator';
+import { useLanguage } from '../../context/LanguageContext';
 
 const BackArrowIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -34,6 +35,7 @@ interface NewMessageProps {
 }
 
 const NewMessage: React.FC<NewMessageProps> = ({ onSelectUser, onBack }) => {
+    const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -74,10 +76,10 @@ const NewMessage: React.FC<NewMessageProps> = ({ onSelectUser, onBack }) => {
     return (
         <div className="h-full flex flex-col">
             <header className="flex items-center gap-3 p-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
-                <button onClick={onBack} aria-label="Back to conversations">
+                <button onClick={onBack} aria-label={t('messages.back')}>
                    <BackArrowIcon className="w-6 h-6" />
                 </button>
-                <h2 className="text-lg font-semibold text-center flex-grow">New Message</h2>
+                <h2 className="text-lg font-semibold text-center flex-grow">{t('messages.newMessageTitle')}</h2>
                 <div className="w-6"></div> {/* Spacer */}
             </header>
             <div className="p-4 flex-shrink-0">
@@ -87,7 +89,7 @@ const NewMessage: React.FC<NewMessageProps> = ({ onSelectUser, onBack }) => {
                     </span>
                     <input
                         type="text"
-                        placeholder="Search for users..."
+                        placeholder={t('messages.searchUsers')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className={`bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md py-1.5 pl-10 pr-4 w-full text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 dark:text-zinc-100`}
@@ -97,14 +99,14 @@ const NewMessage: React.FC<NewMessageProps> = ({ onSelectUser, onBack }) => {
             </div>
             <main className="flex-grow overflow-y-auto">
                 {isSearching && <SpinnerIcon />}
-                {!isSearching && searchQuery && searchResults.length === 0 && <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">No results found.</p>}
+                {!isSearching && searchQuery && searchResults.length === 0 && <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">{t('header.noResults')}</p>}
                 {!isSearching && searchResults.map(user => {
                     const isOnline = user.lastSeen && (new Date().getTime() / 1000 - user.lastSeen.seconds) < 600;
                     return (
                         <button key={user.id} onClick={() => onSelectUser(user)} className="w-full text-left flex items-center p-3 gap-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
                            <div className="relative flex-shrink-0">
                                 <img src={user.avatar} alt={user.username} className="w-14 h-14 rounded-full object-cover" />
-                                {isOnline && <OnlineIndicator className="bottom-0 right-0" />}
+                                {isOnline && <OnlineIndicator />}
                            </div>
                            <div className="flex-grow overflow-hidden">
                                <p className="font-semibold">{user.username}</p>

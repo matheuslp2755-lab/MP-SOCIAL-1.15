@@ -17,6 +17,7 @@ import {
 } from '../../firebase';
 import ConnectionCrystal from './ConnectionCrystal';
 import OnlineIndicator from '../common/OnlineIndicator';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ChatWindowProps {
     conversationId: string | null;
@@ -90,6 +91,7 @@ const BackArrowIcon: React.FC<{className?: string}> = ({ className }) => (
 );
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
+    const { t } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
@@ -144,7 +146,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                 height: rect.height
             });
 
-            setAnimationMessage(justCreated ? '💎 Um novo Cristal de Conexão foi formado!' : '💎 Sua conexão está brilhando!');
+            setAnimationMessage(justCreated ? t('crystal.formed') : t('crystal.glowing'));
             setAnimationState('forming');
 
             const settlingTimer = setTimeout(() => {
@@ -392,11 +394,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
     };
 
     const getCrystalStatusText = (level: CrystalLevel) => {
-        const statuses = {
-            BRILHANTE: 'Brilhante',
-            EQUILIBRADO: 'Equilibrado',
-            APAGADO: 'Apagado',
-            RACHADO: 'Rachado',
+        const statuses: Record<CrystalLevel, string> = {
+            BRILHANTE: t('crystal.level.brilhante'),
+            EQUILIBRADO: t('crystal.level.equilibrado'),
+            APAGADO: t('crystal.level.apagado'),
+            RACHADO: t('crystal.level.rachado'),
         };
         return statuses[level] || '';
     }
@@ -413,15 +415,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
 
 
     if (loading) {
-        return <div className="h-full flex items-center justify-center">Loading messages...</div>;
+        return <div className="h-full flex items-center justify-center">{t('messages.loading')}</div>;
     }
     
     if (!conversationId) {
          return (
             <div className="h-full flex flex-col items-center justify-center text-center p-8">
                 <svg aria-label="Direct" className="w-24 h-24 text-zinc-800 dark:text-zinc-200" fill="currentColor" height="96" role="img" viewBox="0 0 96 96" width="96"><path d="M48 0C21.534 0 0 21.534 0 48s21.534 48 48 48 48-21.534 48-48S74.466 0 48 0Zm0 91.5C24.087 91.5 4.5 71.913 4.5 48S24.087 4.5 48 4.5 91.5 24.087 91.5 48 71.913 91.5 48 91.5Zm16.5-54.498L33.91 56.41l-10.46-10.46a4.5 4.5 0 0 0-6.364 6.364l13.642 13.64a4.5 4.5 0 0 0 6.364 0L70.864 43.37a4.5 4.5 0 0 0-6.364-6.368Z"></path></svg>
-                <h2 className="text-2xl mt-4">Your Messages</h2>
-                <p className="text-zinc-500 dark:text-zinc-400 mt-2">Send private photos and messages to a friend.</p>
+                <h2 className="text-2xl mt-4">{t('messages.yourMessages')}</h2>
+                <p className="text-zinc-500 dark:text-zinc-400 mt-2">{t('messages.sendPrivate')}</p>
             </div>
         );
     }
@@ -431,7 +433,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
         <div className="flex flex-col h-full relative" ref={dialogRef}>
             {otherUser && (
                 <header className="flex items-center gap-3 p-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
-                    <button onClick={onBack} aria-label="Back to conversations">
+                    <button onClick={onBack} aria-label={t('messages.back')}>
                        <BackArrowIcon className="w-6 h-6" />
                     </button>
                     <div className="relative">
@@ -444,12 +446,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                             <div 
                                 ref={crystalHeaderRef} 
                                 className={`flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 transition-opacity duration-300 ${animationState !== 'idle' ? 'opacity-0' : 'opacity-100'}`} 
-                                title={`Cristal de Conexão: ${getCrystalStatusText(crystalData.level)}`}
+                                title={t('crystal.title', { status: getCrystalStatusText(crystalData.level) })}
                             >
                                 <ConnectionCrystal level={crystalData.level} className="w-4 h-4" />
                                 <span>{getCrystalStatusText(crystalData.level)}</span>
                                 {crystalData.streak > 1 && (
-                                    <span title={`${crystalData.streak} dias de interação seguida`}>🔥 {crystalData.streak}</span>
+                                    <span title={t('crystal.streak', { streak: crystalData.streak })}>🔥 {crystalData.streak}</span>
                                 )}
                             </div>
                         )}
@@ -500,7 +502,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                     ))}
                     {shouldShowSeen && (
                          <div className="flex justify-end pr-12">
-                             <p className="text-xs text-zinc-500 dark:text-zinc-400">Seen</p>
+                             <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('messages.seen')}</p>
                          </div>
                     )}
                     <div ref={messagesEndRef} />
@@ -511,7 +513,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                     <div className="bg-zinc-100 dark:bg-zinc-900 p-2 rounded-t-lg mb-[-8px] border-l-4 border-sky-500 relative mx-1">
                         <div className="flex justify-between items-center">
                             <p className="text-xs font-semibold text-sky-500">
-                                Replying to {replyingTo.senderId === currentUser.uid ? 'yourself' : otherUser?.username}
+                                {replyingTo.senderId === currentUser.uid
+                                    ? t('messages.replyingToSelf')
+                                    : t('messages.replyingToOther', { username: otherUser?.username || '...' })}
                             </p>
                              <button onClick={() => setReplyingTo(null)} className="p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -528,11 +532,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Message..."
+                        placeholder={t('messages.messagePlaceholder')}
                         className={`w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 py-2 pl-4 pr-4 text-sm focus:outline-none focus:border-sky-500 ${replyingTo ? 'rounded-b-full rounded-t-none' : 'rounded-full'}`}
                     />
                     <button type="submit" disabled={!newMessage.trim()} className="text-sky-500 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed px-2">
-                        Send
+                        {t('messages.send')}
                     </button>
                 </form>
             </div>
@@ -543,22 +547,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                     <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center"
                         onClick={e => e.stopPropagation()}
                     >
-                        <h3 className="text-lg font-semibold mb-2">Delete Message?</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t('messages.deleteTitle')}</h3>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                            Are you sure you want to delete this message? This cannot be undone.
+                            {t('messages.deleteBody')}
                         </p>
                         <div className="flex justify-center gap-4">
                             <button 
                                 onClick={() => setShowDeleteConfirm({ open: false, messageId: null })}
                                 className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 font-semibold"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                             <button 
                                 onClick={handleDeleteMessage}
                                 className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
                             >
-                                Delete
+                                {t('common.delete')}
                             </button>
                         </div>
                     </div>

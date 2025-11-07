@@ -27,6 +27,7 @@ import Button from '../common/Button';
 import EditProfileModal from './EditProfileModal';
 import OnlineIndicator from '../common/OnlineIndicator';
 import PulseViewerModal from '../pulse/PulseViewerModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -70,6 +71,7 @@ type Pulse = {
 };
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {
+    const { t } = useLanguage();
     const [user, setUser] = useState<ProfileUserData | null>(null);
     const [posts, setPosts] = useState<Post[]>([]);
     const [pulses, setPulses] = useState<Pulse[]>([]);
@@ -393,18 +395,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
 
     const renderFollowButton = () => {
         if (currentUser?.uid === userId) {
-            return <Button onClick={() => setIsEditModalOpen(true)} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">Edit Profile</Button>;
+            return <Button onClick={() => setIsEditModalOpen(true)} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">{t('profile.editProfile')}</Button>;
         }
         return (
             <div className="flex items-center gap-2">
                 {isFollowing ? (
-                    <Button onClick={handleUnfollow} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">Following</Button>
+                    <Button onClick={handleUnfollow} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">{t('profile.following')}</Button>
                 ) : followRequestSent ? (
-                    <Button onClick={handleCancelFollowRequest} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">Requested</Button>
+                    <Button onClick={handleCancelFollowRequest} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">{t('header.requested')}</Button>
                 ) : (
-                    <Button onClick={handleFollowAction} className="!w-auto">Follow</Button>
+                    <Button onClick={handleFollowAction} className="!w-auto">{t('profile.follow')}</Button>
                 )}
-                 <Button onClick={() => onStartMessage({ id: userId, username: user!.username, avatar: user!.avatar })} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">Message</Button>
+                 <Button onClick={() => onStartMessage({ id: userId, username: user!.username, avatar: user!.avatar })} className="!w-auto !bg-zinc-200 dark:!bg-zinc-700 !text-black dark:!text-white hover:!bg-zinc-300 dark:hover:!bg-zinc-600">{t('profile.message')}</Button>
             </div>
         );
     };
@@ -413,8 +415,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
         if (user?.isPrivate && !isFollowing && currentUser?.uid !== userId) {
             return (
                 <div className="flex flex-col justify-center items-center p-16 text-center border-t border-zinc-300 dark:border-zinc-700">
-                    <h3 className="text-xl font-semibold">This Account is Private</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">Follow to see their photos and videos.</p>
+                    <h3 className="text-xl font-semibold">{t('profile.privateAccountMessage')}</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">{t('profile.privateAccountSuggestion')}</p>
                 </div>
             );
         }
@@ -432,8 +434,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 </div>
             ) : (
                  <div className="flex flex-col justify-center items-center p-16">
-                    <h3 className="text-2xl font-bold">No Posts Yet</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">When this user shares photos, you'll see them here.</p>
+                    <h3 className="text-2xl font-bold">{t('profile.noPosts')}</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">{t('profile.noPostsSuggestion')}</p>
                 </div>
             )
         );
@@ -455,8 +457,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 </div>
             ) : (
                 <div className="flex flex-col justify-center items-center p-16">
-                    <h3 className="text-2xl font-bold">No Pulses Yet</h3>
-                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">This user hasn't shared any pulses.</p>
+                    <h3 className="text-2xl font-bold">{t('profile.noPulses')}</h3>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2">{t('profile.noPulsesSuggestion')}</p>
                 </div>
             )
         );
@@ -468,13 +470,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                         onClick={() => setActiveTab('posts')}
                         className={`flex items-center gap-2 pt-2 -mt-0.5 ${activeTab === 'posts' ? 'text-sky-500 border-t-2 border-sky-500' : ''}`}
                     >
-                        <GridIcon className="w-4 h-4"/> POSTS
+                        <GridIcon className="w-4 h-4"/> {t('profile.postsTab')}
                     </button>
                     <button 
                         onClick={() => setActiveTab('pulses')}
                         className={`flex items-center gap-2 pt-2 -mt-0.5 ${activeTab === 'pulses' ? 'text-sky-500 border-t-2 border-sky-500' : ''}`}
                     >
-                        <PulseGridIcon className="w-4 h-4"/> PULSES
+                        <PulseGridIcon className="w-4 h-4"/> {t('profile.pulsesTab')}
                     </button>
                 </div>
                 {activeTab === 'posts' ? renderPostsGrid() : renderPulsesGrid()}
@@ -488,7 +490,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     }
     
     if (!user) {
-        return <p className="text-center p-8 text-zinc-500 dark:text-zinc-400">User not found.</p>;
+        return <p className="text-center p-8 text-zinc-500 dark:text-zinc-400">{t('profile.notFound')}</p>;
     }
 
     const isOnline = user.lastSeen && (new Date().getTime() / 1000 - user.lastSeen.seconds) < 600; // 10 minutes
@@ -499,7 +501,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             <header className="flex flex-col sm:flex-row items-center gap-4 sm:gap-16 mb-8">
                 <div className="w-36 h-36 sm:w-40 sm:h-40 flex-shrink-0 relative">
                     <img src={user.avatar} alt={user.username} className="w-full h-full rounded-full object-cover border-2 dark:border-zinc-800 p-1" />
-                    {isOnline && <OnlineIndicator className="bottom-2 right-2" />}
+                    {isOnline && <OnlineIndicator />}
                 </div>
                 <div className="flex flex-col gap-4 items-center sm:items-start w-full">
                     <div className="flex items-center gap-4">
@@ -507,9 +509,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                         {renderFollowButton()}
                     </div>
                     <div className="flex items-center gap-8 text-sm">
-                        <span><span className="font-semibold">{stats.posts}</span> posts</span>
-                        <span><span className="font-semibold">{stats.followers}</span> followers</span>
-                        <span><span className="font-semibold">{stats.following}</span> following</span>
+                        <span><span className="font-semibold">{stats.posts}</span> {t('profile.posts')}</span>
+                        <span><span className="font-semibold">{stats.followers}</span> {t('profile.followers')}</span>
+                        <span><span className="font-semibold">{stats.following}</span> {t('profile.followingCount')}</span>
                     </div>
                      {user.bio && (
                         <div className="text-sm pt-2 text-center sm:text-left">

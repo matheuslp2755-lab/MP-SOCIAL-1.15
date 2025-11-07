@@ -3,6 +3,7 @@ import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
 import NewMessage from './NewMessage';
 import { auth, db, doc, getDoc, setDoc, serverTimestamp, updateDoc } from '../../firebase';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MessagesModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface MessagesModalProps {
 }
 
 const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialTargetUser, initialConversationId }) => {
+    const { t } = useLanguage();
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [view, setView] = useState<'list' | 'new'>('list');
 
@@ -103,8 +105,8 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
             <>
                 <header className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800 flex-shrink-0">
                     <div className="w-8"></div> {/* Spacer */}
-                    <h2 className="text-lg font-semibold text-center">Messages</h2>
-                    <button onClick={() => setView('new')} className="w-8 text-right" aria-label="New message">
+                    <h2 className="text-lg font-semibold text-center">{t('messages.title')}</h2>
+                    <button onClick={() => setView('new')} className="w-8 text-right" aria-label={t('messages.newMessage')}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
@@ -129,7 +131,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                 onClick={e => e.stopPropagation()}
             >
                 {!activeConversationId && (
-                     <button onClick={onClose} className="absolute top-3 right-4 text-3xl font-light leading-none z-10" aria-label="Close messages">&times;</button>
+                     <button onClick={onClose} className="absolute top-3 right-4 text-3xl font-light leading-none z-10" aria-label={t('messages.close')}>&times;</button>
                 )}
                 {renderContent()}
             </div>

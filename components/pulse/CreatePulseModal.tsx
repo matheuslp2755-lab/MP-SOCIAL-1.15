@@ -12,6 +12,7 @@ import {
 } from '../../firebase';
 import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CreatePulseModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const MediaIcon: React.FC = () => (
 
 
 const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, onPulseCreated }) => {
+    const { t } = useLanguage();
     const [mediaFile, setMediaFile] = useState<File | null>(null);
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -53,7 +55,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
             } else if (file.type.startsWith('video/')) {
                 setMediaType('video');
             } else {
-                setError('Please select a valid image or video file.');
+                setError(t('createPulse.invalidFileError'));
                 return;
             }
             setMediaFile(file);
@@ -89,7 +91,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
 
         } catch (err) {
             console.error("Error creating pulse:", err);
-            setError("Failed to create pulse. Please try again.");
+            setError(t('createPulse.publishError'));
         } finally {
             setSubmitting(false);
         }
@@ -106,10 +108,10 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold">Create new pulse</h2>
+                    <h2 className="text-lg font-semibold">{t('createPulse.title')}</h2>
                     {mediaPreview && (
                          <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
-                            {submitting ? 'Publishing...' : 'Publish Pulse'}
+                            {submitting ? t('createPulse.publishing') : t('createPulse.publish')}
                         </Button>
                     )}
                 </div>
@@ -127,7 +129,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                 </div>
                                 <TextAreaInput 
                                     id="caption"
-                                    label="Write a caption... (optional)"
+                                    label={t('createPulse.captionLabel')}
                                     value={caption}
                                     onChange={(e) => setCaption(e.target.value)}
                                     className="!min-h-[150px]"
@@ -138,10 +140,10 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                     ) : (
                         <div className="flex flex-col items-center justify-center p-16">
                             <MediaIcon />
-                            <h3 className="text-xl mt-4 mb-2">Select an image or video</h3>
+                            <h3 className="text-xl mt-4 mb-2">{t('createPulse.selectMedia')}</h3>
                             <input type="file" ref={fileInputRef} onChange={handleMediaChange} className="hidden" accept="image/*,video/*" />
                             <Button onClick={triggerFileInput}>
-                                Select from computer
+                                {t('createPulse.selectFromComputer')}
                             </Button>
                              {error && <p className="text-red-500 text-xs text-center mt-4">{error}</p>}
                         </div>

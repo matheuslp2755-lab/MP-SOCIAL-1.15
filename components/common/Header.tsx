@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, db, collection, query, where, getDocs, limit, doc, setDoc, deleteDoc, serverTimestamp, orderBy, onSnapshot, writeBatch, addDoc } from '../../firebase';
 import OnlineIndicator from './OnlineIndicator';
+import { useLanguage } from '../../context/LanguageContext';
 
 type UserSearchResult = {
     id: string;
@@ -79,6 +80,7 @@ const SpinnerIcon: React.FC = () => (
 
 
 const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePostModal, onOpenCreatePulseModal, onOpenMessages }) => {
+    const { t } = useLanguage();
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -410,25 +412,25 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
     
     const getButtonForUser = (user: UserSearchResult) => {
         if (following.includes(user.id)) {
-            return <button onClick={(e) => { e.stopPropagation(); handleUnfollow(user.id); }} className="ml-auto text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg transition-colors">Following</button>;
+            return <button onClick={(e) => { e.stopPropagation(); handleUnfollow(user.id); }} className="ml-auto text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg transition-colors">{t('header.following')}</button>;
         }
         if (requestedIds.includes(user.id)) {
-            return <button onClick={(e) => { e.stopPropagation(); handleCancelRequest(user.id); }} className="ml-auto text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg transition-colors">Requested</button>;
+            return <button onClick={(e) => { e.stopPropagation(); handleCancelRequest(user.id); }} className="ml-auto text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg transition-colors">{t('header.requested')}</button>;
         }
-        return <button onClick={(e) => { e.stopPropagation(); handleFollow(user); }} className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-4 py-1 rounded-lg transition-colors">Follow</button>;
+        return <button onClick={(e) => { e.stopPropagation(); handleFollow(user); }} className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-4 py-1 rounded-lg transition-colors">{t('header.follow')}</button>;
     };
 
     const searchResultContent = (
         <>
            {isSearching && <SpinnerIcon />}
-           {!isSearching && searchQuery && searchResults.length === 0 && <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">No results found.</p>}
+           {!isSearching && searchQuery && searchResults.length === 0 && <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">{t('header.noResults')}</p>}
            {!isSearching && searchResults.map(user => {
                const isOnline = user.lastSeen && (new Date().getTime() / 1000 - user.lastSeen.seconds) < 600;
                return (
                <div key={user.id} onClick={() => handleUserClick(user)} className="w-full text-left flex items-center p-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">
                    <div className="relative">
                         <img src={user.avatar} alt={user.username} className="w-11 h-11 rounded-full object-cover" />
-                        {isOnline && <OnlineIndicator className="bottom-0 right-0" />}
+                        {isOnline && <OnlineIndicator />}
                    </div>
                    <div className="ml-3 flex-grow">
                        <p className="font-semibold text-sm">{user.username}</p>
@@ -440,15 +442,16 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
     );
 
     const getNotificationText = (notification: Notification) => {
+        const params = { username: notification.fromUsername, commentText: notification.commentText || '' };
         switch (notification.type) {
             case 'follow':
-                return ' started following you.';
+                return t('header.followNotification', params);
             case 'message':
-                return ' sent you a message.';
+                return t('header.messageNotification', params);
             case 'follow_request':
-                return ' wants to follow you.';
+                return t('header.followRequestNotification', params);
             case 'mention_comment':
-                return ` mentioned you in a comment: "${notification.commentText}"`;
+                return t('header.mentionCommentNotification', params);
             default:
                 return '';
         }
@@ -472,7 +475,7 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
                         </span>
                         <input
                             type="text"
-                            placeholder="Search"
+                            placeholder={t('header.searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
@@ -500,12 +503,12 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
                         <PlusCircleIcon className="w-6 h-6 text-zinc-800 dark:text-zinc-200 hover:text-zinc-500 dark:hover:text-zinc-400"/>
                     </button>
 
-                    <button onClick={() => onOpenMessages()} className="relative">
+                    <button onClick={() => onOpenMessages()} className="relative" title={t('header.messages')}>
                         <MessagesIcon className="w-6 h-6 text-zinc-800 dark:text-zinc-200 hover:text-zinc-500 dark:hover:text-zinc-400"/>
                     </button>
                     
                     <div ref={activityRef} className="relative">
-                        <button onClick={handleOpenActivity} className="relative">
+                        <button onClick={handleOpenActivity} className="relative" title={t('header.notifications')}>
                             <HeartIcon className="w-6 h-6 text-zinc-800 dark:text-zinc-200 hover:text-zinc-500 dark:hover:text-zinc-400"/>
                             {hasUnreadNotifications && (
                                 <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-black"></span>
@@ -522,14 +525,15 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
                                         >
                                             <img src={notification.fromUserAvatar} alt={notification.fromUsername} className="w-11 h-11 rounded-full object-cover"/>
                                             <div className="ml-3 text-sm flex-grow">
-                                                <p>
-                                                    <span className="font-semibold">{notification.fromUsername}</span>
-                                                    {getNotificationText(notification)}
-                                                </p>
+                                                <p
+                                                    dangerouslySetInnerHTML={{ __html: getNotificationText(notification)
+                                                        .replace(notification.fromUsername, `<span class="font-semibold">${notification.fromUsername}</span>`)
+                                                    }}
+                                                />
                                                 {notification.type === 'follow_request' && (
                                                     <div className="flex gap-2 mt-2">
-                                                        <button onClick={(e) => { e.stopPropagation(); handleAcceptFollowRequest(notification); }} className="text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-4 py-1 rounded-lg">Accept</button>
-                                                        <button onClick={(e) => { e.stopPropagation(); handleDeclineFollowRequest(notification); }} className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg">Decline</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleAcceptFollowRequest(notification); }} className="text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-4 py-1 rounded-lg">{t('header.accept')}</button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeclineFollowRequest(notification); }} className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-4 py-1 rounded-lg">{t('header.decline')}</button>
 
                                                     </div>
                                                 )}
@@ -537,7 +541,7 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">No new activity.</p>
+                                    <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 p-4">{t('header.noActivity')}</p>
                                 )}
                             </div>
                         )}
@@ -545,16 +549,16 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
 
                     <div ref={profileRef} className="relative">
                         <button onClick={() => setIsProfileDropdownOpen(prev => !prev)} className="w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-white dark:focus:ring-offset-black">
-                             <img src={currentUser?.photoURL || `https://i.pravatar.cc/150?u=${currentUser?.uid}`} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                             <img src={currentUser?.photoURL || `https://i.pravatar.cc/150?u=${currentUser?.uid}`} alt={t('header.profile')} className="w-full h-full rounded-full object-cover" />
                         </button>
                         {isProfileDropdownOpen && (
                             <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-zinc-950 rounded-md shadow-lg border border-zinc-200 dark:border-zinc-800 z-20 py-1">
                                 <button onClick={handleProfileLink} className="w-full flex items-center text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
-                                    <ProfileIcon /> Profile
+                                    <ProfileIcon /> {t('header.profile')}
                                 </button>
                                 <div className="border-t border-zinc-200 dark:border-zinc-800 my-1"></div>
                                 <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900">
-                                    Log Out
+                                    {t('header.logOut')}
                                 </button>
                             </div>
                         )}
@@ -570,7 +574,7 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
                         }} 
                         className="text-sm font-semibold"
                     >
-                        Cancel
+                        {t('header.cancel')}
                     </button>
                 </div>
             </div>

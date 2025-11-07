@@ -18,7 +18,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const validLanguages: Language[] = ['en', 'pt'];
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('pt');
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -32,21 +32,23 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const loadTranslations = useCallback(async (lang: Language) => {
     setLoading(true);
-    let langToLoad: Language = validLanguages.includes(lang) ? lang : 'en';
+    let langToLoad: Language = validLanguages.includes(lang) ? lang : 'pt';
 
     try {
-        const response = await fetch(`/locales/${langToLoad}.json`);
+        let response = await fetch(`/locales/${langToLoad}.json`);
         if (!response.ok) {
-            console.error(`Failed to load ${langToLoad}.json, falling back to English.`);
-            langToLoad = 'en';
-            const fallbackResponse = await fetch(`/locales/en.json`);
-            if (!fallbackResponse.ok) throw new Error('Failed to load fallback English translations.');
-            const newMessages = await fallbackResponse.json();
-            setMessages(newMessages);
-        } else {
-            const newMessages = await response.json();
-            setMessages(newMessages);
+            console.error(`Failed to load ${langToLoad}.json, falling back to Portuguese.`);
+            langToLoad = 'pt';
+            response = await fetch(`/locales/pt.json`);
+            if (!response.ok) {
+                console.error(`Failed to load pt.json, falling back to English.`);
+                langToLoad = 'en';
+                response = await fetch(`/locales/en.json`);
+                if (!response.ok) throw new Error('Failed to load any translations.');
+            }
         }
+        const newMessages = await response.json();
+        setMessages(newMessages);
         setLanguageState(langToLoad);
     } catch (error) {
         console.error("Could not load any translation files.", error);
@@ -58,7 +60,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   useEffect(() => {
     const fetchUserLanguage = async () => {
-        let initialLang: Language = 'en';
+        let initialLang: Language = 'pt';
         if (currentUser) {
             try {
                 const userDocRef = doc(db, 'users', currentUser.uid);
@@ -70,7 +72,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     }
                 }
             } catch (error) {
-                console.error("Error fetching user language, defaulting to English.", error);
+                console.error("Error fetching user language, defaulting to Portuguese.", error);
             }
         }
         await loadTranslations(initialLang);
@@ -91,7 +93,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string, replacements?: { [key:string]: string | number }): string => {
-    let message = messages[key] || key;
+    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages as any) || key;
     if (replacements) {
       Object.keys(replacements).forEach(placeholder => {
         message = message.replace(`{${placeholder}}`, String(replacements[placeholder]));

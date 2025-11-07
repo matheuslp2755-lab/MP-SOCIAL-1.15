@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Pulse = {
     id: string;
@@ -23,6 +24,7 @@ interface PulseBarProps {
 }
 
 const PulseBar: React.FC<PulseBarProps> = ({ usersWithPulses, onViewPulses }) => {
+    const { t } = useLanguage();
     return (
         <div className="w-full border-b border-zinc-300 dark:border-zinc-800">
             {/* The `overflow-x-auto` with padding creates a nice scrollable area */}
@@ -33,7 +35,7 @@ const PulseBar: React.FC<PulseBarProps> = ({ usersWithPulses, onViewPulses }) =>
                         className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 group"
                         onClick={() => onViewPulses(author.id)}
                         role="button"
-                        aria-label={`View ${author.username}'s pulse`}
+                        aria-label={t('pulseBar.viewPulse', { username: author.username })}
                     >
                         <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 group-hover:scale-105 transition-transform">
                             <div className="bg-white dark:bg-black p-0.5 rounded-full h-full w-full">

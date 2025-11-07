@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db, setDoc, doc, storage, storageRef, uploadBytes, getDownloadURL, serverTimestamp } from '../firebase';
 import TextInput from '../components/common/TextInput';
 import Button from '../components/common/Button';
+import { useLanguage } from './LanguageContext';
 
 const AppLogo: React.FC = () => {
     return (
@@ -12,17 +13,23 @@ const AppLogo: React.FC = () => {
     );
 };
 
-const AppStoreButton: React.FC = () => (
-    <a href="#" className="inline-block">
-        <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_ios_english-en.png/180ae7a0bcf7.png" alt="Download on the App Store" className="h-10"/>
-    </a>
-);
+const AppStoreButton: React.FC = () => {
+    const { t } = useLanguage();
+    return (
+        <a href="#" className="inline-block">
+            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_ios_english-en.png/180ae7a0bcf7.png" alt={t('login.appStoreAlt')} className="h-10"/>
+        </a>
+    );
+};
 
-const GooglePlayButton: React.FC = () => (
-    <a href="#" className="inline-block">
-        <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_android_english-en.png/e9cd846dc748.png" alt="Get it on Google Play" className="h-10"/>
-    </a>
-);
+const GooglePlayButton: React.FC = () => {
+    const { t } = useLanguage();
+    return (
+        <a href="#" className="inline-block">
+            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_android_english-en.png/e9cd846dc748.png" alt={t('login.googlePlayAlt')} className="h-10"/>
+        </a>
+    );
+};
 
 interface SignUpProps {
   onSwitchMode: () => void;
@@ -34,6 +41,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchMode }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useLanguage();
 
   const isFormValid = email.includes('@') && username.trim() !== '' && password.trim().length >= 6;
 
@@ -72,15 +80,16 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchMode }) => {
         bio: '',
         isPrivate: false,
         createdAt: serverTimestamp(),
-        lastSeen: serverTimestamp()
+        lastSeen: serverTimestamp(),
+        language: 'pt',
       });
 
       // Auth state change will be handled by App.tsx
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
-        setError("This email is already in use.");
+        setError(t('signup.emailInUseError'));
       } else {
-        setError("Failed to create an account. Please try again.");
+        setError(t('signup.genericError'));
       }
       console.error(err);
     } finally {
@@ -93,51 +102,51 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchMode }) => {
         <div className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg p-10 mb-2.5">
             <AppLogo />
             <h2 className="text-zinc-500 dark:text-zinc-400 font-semibold text-center mb-6">
-                Sign up to see photos and videos from your friends.
+                {t('signup.subtitle')}
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-2">
                 <TextInput
                     id="email"
                     type="email"
-                    label="Email address"
+                    label={t('signup.emailLabel')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
                 <TextInput
                     id="username"
                     type="text"
-                    label="Username"
+                    label={t('signup.usernameLabel')}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                 />
                 <TextInput
                     id="password"
                     type="password"
-                    label="Password"
+                    label={t('signup.passwordLabel')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
                 {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
                 <Button type="submit" disabled={!isFormValid || loading} className="mt-4">
-                    {loading ? "Signing Up..." : "Sign Up"}
+                    {loading ? t('signup.signingUpButton') : t('signup.signUpButton')}
                 </Button>
             </form>
         </div>
         
         <div className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg p-6 text-center text-sm">
             <p>
-                Have an account?{' '}
+                {t('signup.haveAccount')}{' '}
                 <button
                     onClick={onSwitchMode}
                     className="font-semibold text-sky-500 hover:text-sky-600 bg-transparent border-none p-0 cursor-pointer"
                 >
-                    Log in
+                    {t('signup.logInLink')}
                 </button>
             </p>
         </div>
 
         <div className="text-center mt-4 text-sm">
-            <p className="mb-4">Get the app.</p>
+            <p className="mb-4">{t('signup.getTheApp')}</p>
             <div className="flex justify-center gap-4">
                 <AppStoreButton />
                 <GooglePlayButton />

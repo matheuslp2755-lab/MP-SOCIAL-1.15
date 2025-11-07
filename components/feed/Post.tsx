@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, formatTimestamp, where, getDocs, limit, writeBatch, getDoc } from '../../firebase';
+import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc } from '../../firebase';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTimeAgo } from '../../hooks/useTimeAgo';
 
 type PostType = {
     id: string;
@@ -26,24 +28,24 @@ type UserSearchResult = {
     avatar: string;
 };
 
-const LikeIcon: React.FC<{className?: string, isLiked: boolean}> = ({ className, isLiked }) => (
-  <svg aria-label="Like" className={className} fill={isLiked ? '#ef4444' : 'currentColor'} height="24" role="img" viewBox="0 0 24 24" width="24"><title>Like</title><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-6.12 8.351C12.89 20.72 12.434 21 12 21s-.89-.28-1.38-.627C7.152 14.08 4.5 12.192 4.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.118-1.763a4.21 4.21 0 0 1 3.675-1.941Z"></path></svg>
+const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> = ({ className, isLiked, title }) => (
+  <svg aria-label={title} className={className} fill={isLiked ? '#ef4444' : 'currentColor'} height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-6.12 8.351C12.89 20.72 12.434 21 12 21s-.89-.28-1.38-.627C7.152 14.08 4.5 12.192 4.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.118-1.763a4.21 4.21 0 0 1 3.675-1.941Z"></path></svg>
 );
 
-const CommentIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg aria-label="Comment" className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>Comment</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></path></svg>
+const CommentIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+    <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></path></svg>
 );
 
-const ShareIcon: React.FC<{className?: string}> = ({ className }) => (
-  <svg aria-label="Share Post" className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>Share Post</title><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
+const ShareIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+  <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
 );
 
-const SaveIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg aria-label="Save" className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>Save</title><polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
+const SaveIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+    <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
 );
 
-const MoreIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg aria-label="More options" className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>More options</title><circle cx="12" cy="12" r="1.5"></circle><circle cx="6" cy="12" r="1.5"></circle><circle cx="18" cy="12" r="1.5"></circle></svg>
+const MoreIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+    <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><circle cx="12" cy="12" r="1.5"></circle><circle cx="6" cy="12" r="1.5"></circle><circle cx="18" cy="12" r="1.5"></circle></svg>
 );
 
 interface PostProps {
@@ -53,6 +55,8 @@ interface PostProps {
 
 const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const currentUser = auth.currentUser;
+  const { t } = useLanguage();
+  const { formatTimestamp } = useTimeAgo();
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes.length);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -305,7 +309,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
             {currentUser?.uid === post.userId && (
                  <div className="ml-auto relative">
                     <button onClick={() => setIsOptionsOpen(prev => !prev)}>
-                        <MoreIcon className="w-6 h-6" />
+                        <MoreIcon className="w-6 h-6" title={t('post.moreOptions')} />
                     </button>
                     {isOptionsOpen && (
                          <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-zinc-950 rounded-md shadow-lg border dark:border-zinc-800 z-10 py-1">
@@ -316,7 +320,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                                 }}
                                 className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                             >
-                                Delete
+                                {t('post.delete')}
                             </button>
                         </div>
                     )}
@@ -331,19 +335,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         <div className="p-4">
             <div className="flex items-center gap-4 mb-2">
                 <button onClick={handleLikeToggle}>
-                    <LikeIcon className={`w-6 h-6 hover:opacity-70 transition-opacity ${isLiked ? 'text-red-500' : 'dark:text-white'}`} isLiked={isLiked} />
+                    <LikeIcon title={t('post.like')} className={`w-6 h-6 hover:opacity-70 transition-opacity ${isLiked ? 'text-red-500' : 'dark:text-white'}`} isLiked={isLiked} />
                 </button>
                 <button>
-                    <CommentIcon className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                    <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
                 <button>
-                    <ShareIcon className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                    <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
                 <button className="ml-auto">
-                    <SaveIcon className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                    <SaveIcon title={t('post.save')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-            <p className="font-semibold text-sm mb-1">{likesCount.toLocaleString()} likes</p>
+            <p className="font-semibold text-sm mb-1">{likesCount.toLocaleString()} {t('post.likes')}</p>
             <div className="text-sm space-y-1">
                 <p>
                     <span className="font-semibold mr-2">{post.username}</span>
@@ -362,7 +366,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                                      setIsCommentDeleteConfirmOpen(true);
                                  }}
                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                 aria-label="Delete comment"
+                                 aria-label={t('post.delete')}
                              >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-zinc-500 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -374,7 +378,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
             </div>
             {comments.length > 2 && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                    View all {comments.length} comments
+                    {t('post.viewAllComments', { count: comments.length })}
                 </p>
             )}
             <p className="text-xs text-zinc-500 dark:text-zinc-400 uppercase mt-2">{formatTimestamp(post.timestamp)}</p>
@@ -383,7 +387,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         <div className="relative border-t border-zinc-200 dark:border-zinc-800 px-4 py-2">
             {mentionQuery !== null && (
               <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-zinc-950 rounded-md shadow-lg border border-zinc-200 dark:border-zinc-800 z-20 max-h-60 overflow-y-auto">
-                {isMentionLoading && <div className="p-2 text-center text-sm text-zinc-500">Searching...</div>}
+                {isMentionLoading && <div className="p-2 text-center text-sm text-zinc-500">{t('post.mentionSearching')}</div>}
                 {!isMentionLoading && mentionResults.length > 0 && (
                   mentionResults.map(user => (
                     <div key={user.id} onClick={() => handleMentionSelect(user.username)} className="flex items-center p-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">
@@ -393,7 +397,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                   ))
                 )}
                 {!isMentionLoading && mentionResults.length === 0 && mentionQuery.trim() !== '' && (
-                  <div className="p-2 text-center text-sm text-zinc-500">No users found.</div>
+                  <div className="p-2 text-center text-sm text-zinc-500">{t('post.mentionNoUsers')}</div>
                 )}
               </div>
             )}
@@ -401,7 +405,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                 <input 
                   ref={commentInputRef}
                   type="text" 
-                  placeholder="Add a comment..." 
+                  placeholder={t('post.addComment')}
                   value={newComment}
                   onChange={handleCommentChange}
                   autoComplete="off"
@@ -411,7 +415,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                   className="text-sky-500 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed" 
                   disabled={!newComment.trim()}
                 >
-                    Post
+                    {t('post.postButton')}
                 </button>
             </form>
         </div>
@@ -420,9 +424,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         {isCommentDeleteConfirmOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                 <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
-                    <h3 className="text-lg font-semibold mb-2">Delete Comment?</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('post.deleteCommentTitle')}</h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                        Are you sure you want to delete this comment?
+                        {t('post.deleteCommentBody')}
                     </p>
                     <div className="flex flex-col gap-2">
                          <button 
@@ -430,13 +434,13 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                             disabled={isDeletingComment}
                             className="w-full px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold disabled:opacity-50"
                         >
-                            {isDeletingComment ? 'Deleting...' : 'Delete'}
+                            {isDeletingComment ? t('post.deleting') : t('post.delete')}
                         </button>
                         <button 
                             onClick={() => setIsCommentDeleteConfirmOpen(false)}
                             className="w-full px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                     </div>
                 </div>
@@ -446,9 +450,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         {isDeleteConfirmOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                 <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
-                    <h3 className="text-lg font-semibold mb-2">Delete Post?</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('post.deletePostTitle')}</h3>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                        Are you sure you want to delete this post?
+                        {t('post.deletePostBody')}
                     </p>
                     <div className="flex flex-col gap-2">
                          <button 
@@ -456,13 +460,13 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                             disabled={isDeleting}
                             className="w-full px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold disabled:opacity-50"
                         >
-                            {isDeleting ? 'Deleting...' : 'Delete'}
+                            {isDeleting ? t('post.deleting') : t('post.delete')}
                         </button>
                         <button 
                             onClick={() => setIsDeleteConfirmOpen(false)}
                             className="w-full px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                     </div>
                 </div>

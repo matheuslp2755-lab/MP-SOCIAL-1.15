@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth } from '../../firebase';
+import { useLanguage } from '../../context/LanguageContext';
 
 type Pulse = {
     id: string;
@@ -25,7 +26,7 @@ const TrashIcon: React.FC<{className?: string}> = ({ className }) => (
 
 const PrevIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7 7" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
 );
 
@@ -36,6 +37,7 @@ const NextIcon: React.FC<{className?: string}> = ({ className }) => (
 );
 
 const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPulseIndex, authorInfo, onClose, onDelete }) => {
+    const { t } = useLanguage();
     // FIX: Cria uma cópia local dos pulses para prevenir problemas com referências circulares no objeto da prop.
     const [localPulses, setLocalPulses] = useState([...pulses]);
     const [currentIndex, setCurrentIndex] = useState(initialPulseIndex);
@@ -83,7 +85,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                     <button 
                         onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => i - 1); }} 
                         className="absolute left-2 md:left-4 text-white bg-black/40 rounded-full p-2 z-20 hover:bg-black/70 transition-colors"
-                        aria-label="Previous pulse"
+                        aria-label={t('pulseViewer.previous')}
                     >
                         <PrevIcon className="w-6 h-6" />
                     </button>
@@ -111,7 +113,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                                     <button 
                                         onClick={() => setIsDeleteConfirmOpen(true)} 
                                         className="text-white p-2 rounded-full hover:bg-white/20"
-                                        aria-label="Delete Pulse"
+                                        aria-label={t('pulseViewer.delete')}
                                     >
                                         <TrashIcon className="w-5 h-5" />
                                     </button>
@@ -141,7 +143,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                     <button 
                         onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => i + 1); }} 
                         className="absolute right-2 md:right-4 text-white bg-black/40 rounded-full p-2 z-20 hover:bg-black/70 transition-colors"
-                        aria-label="Next pulse"
+                        aria-label={t('pulseViewer.next')}
                     >
                         <NextIcon className="w-6 h-6" />
                     </button>
@@ -151,9 +153,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
             {isDeleteConfirmOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[60]">
                     <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
-                        <h3 className="text-lg font-semibold mb-2">Delete Pulse?</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t('pulseViewer.deleteTitle')}</h3>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                            Are you sure you want to delete this pulse? This cannot be undone.
+                            {t('pulseViewer.deleteBody')}
                         </p>
                         <div className="flex flex-col gap-2">
                             <button 
@@ -161,13 +163,13 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                                 disabled={isDeleting}
                                 className="w-full px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold disabled:opacity-50"
                             >
-                                {isDeleting ? 'Deleting...' : 'Delete'}
+                                {isDeleting ? t('common.deleting') : t('common.delete')}
                             </button>
                             <button 
                                 onClick={() => setIsDeleteConfirmOpen(false)}
                                 className="w-full px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold"
                             >
-                                Cancel
+                                {t('common.cancel')}
                             </button>
                         </div>
                     </div>

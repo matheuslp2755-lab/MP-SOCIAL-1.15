@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, collection, query, where, onSnapshot, orderBy, doc, formatTimestamp, getDoc } from '../../firebase';
+import { auth, db, collection, query, where, onSnapshot, orderBy, doc, getDoc } from '../../firebase';
 import OnlineIndicator from '../common/OnlineIndicator';
+import { useLanguage } from '../../context/LanguageContext';
+import { useTimeAgo } from '../../hooks/useTimeAgo';
 
 interface Conversation {
     id: string;
@@ -22,6 +24,8 @@ interface ConversationListProps {
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversation }) => {
+    const { t } = useLanguage();
+    const { formatTimestamp } = useTimeAgo();
     const [conversations, setConversations] = useState<Omit<Conversation, 'isOnline'>[]>([]);
     const [userStatuses, setUserStatuses] = useState<Record<string, boolean>>({});
     const [loading, setLoading] = useState(true);
@@ -120,13 +124,13 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
     }));
 
     if (loading) {
-        return <div className="p-4 text-center text-sm text-zinc-500">Loading conversations...</div>;
+        return <div className="p-4 text-center text-sm text-zinc-500">{t('messages.loading')}</div>;
     }
 
     return (
         <div className="h-full overflow-y-auto">
             {conversations.length === 0 ? (
-                <p className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">No conversations yet.</p>
+                <p className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">{t('messages.noConversations')}</p>
             ) : (
                 <ul>
                     {conversationsWithStatus.map(convo => (
@@ -137,14 +141,14 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
                             >
                                 <div className="relative flex-shrink-0">
                                     <img src={convo.otherUser.avatar} alt={convo.otherUser.username} className="w-14 h-14 rounded-full object-cover" />
-                                    {convo.isOnline && <OnlineIndicator className="bottom-0 right-0" />}
+                                    {convo.isOnline && <OnlineIndicator />}
                                 </div>
                                 <div className="flex-grow overflow-hidden">
                                     <div className="flex justify-between items-center">
                                         <p className="font-semibold truncate">{convo.otherUser.username}</p>
                                         {convo.lastMessage?.timestamp && (
                                             <p className="text-xs text-zinc-400 flex-shrink-0 ml-2">
-                                                {formatTimestamp(convo.lastMessage.timestamp).replace(' ago', '').replace(' ', '')}
+                                                {formatTimestamp(convo.lastMessage.timestamp).replace(/\s*ago/i, '').replace(' ', '')}
                                             </p>
                                         )}
                                     </div>

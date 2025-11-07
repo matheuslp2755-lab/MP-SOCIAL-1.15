@@ -8,6 +8,7 @@ import MessagesModal from './messages/MessagesModal';
 import PulseBar from './feed/PulseBar';
 import PulseViewerModal from './pulse/PulseViewerModal';
 import { auth, db, collection, query, where, getDocs, doc, getDoc, deleteDoc, storage, storageRef, deleteObject } from '../firebase';
+import { useLanguage } from '../context/LanguageContext';
 
 const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
@@ -43,18 +44,19 @@ type UserWithPulses = {
 
 
 const EmptyFeed: React.FC = () => {
+    const { t } = useLanguage();
     return (
       <div className="container mx-auto max-w-lg py-8">
         <div className="flex flex-col items-center justify-center text-center p-16 bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-zinc-300 dark:text-zinc-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          <h2 className="text-2xl font-bold mb-2">Welcome to MP SOCIAL</h2>
+          <h2 className="text-2xl font-bold mb-2">{t('feed.welcome')}</h2>
           <p className="text-zinc-500 dark:text-zinc-400">
-            It looks like your feed is empty.
+            {t('feed.empty')}
           </p>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Use the search bar to find and follow your friends to see their photos and videos.
+            {t('feed.emptySuggestion')}
           </p>
         </div>
       </div>

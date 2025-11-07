@@ -1,8 +1,4 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, db, doc, getDoc, updateDoc } from '../firebase';
-
-// REMOVED static imports of JSON files to use fetch instead.
 
 type Language = 'en' | 'pt';
 
@@ -15,43 +11,24 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const validLanguages: Language[] = ['en', 'pt'];
-
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('pt');
   const [messages, setMessages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const loadTranslations = useCallback(async (lang: Language) => {
+  const loadTranslations = useCallback(async () => {
     setLoading(true);
-    let langToLoad: Language = validLanguages.includes(lang) ? lang : 'pt';
-
     try {
-        let response = await fetch(`/locales/${langToLoad}.json`);
+        const response = await fetch(`/locales/pt.json`);
         if (!response.ok) {
-            console.error(`Failed to load ${langToLoad}.json, falling back to Portuguese.`);
-            langToLoad = 'pt';
-            response = await fetch(`/locales/pt.json`);
-            if (!response.ok) {
-                console.error(`Failed to load pt.json, falling back to English.`);
-                langToLoad = 'en';
-                response = await fetch(`/locales/en.json`);
-                if (!response.ok) throw new Error('Failed to load any translations.');
-            }
+            console.error(`Failed to load pt.json. This is a critical error.`);
+            throw new Error('Failed to load Portuguese translations.');
         }
         const newMessages = await response.json();
         setMessages(newMessages);
-        setLanguageState(langToLoad);
+        setLanguageState('pt');
     } catch (error) {
-        console.error("Could not load any translation files.", error);
+        console.error("Could not load translation file.", error);
         setMessages({});
     } finally {
         setLoading(false);
@@ -59,37 +36,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
   
   useEffect(() => {
-    const fetchUserLanguage = async () => {
-        let initialLang: Language = 'pt';
-        if (currentUser) {
-            try {
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    const userLang = userDoc.data().language;
-                    if (userLang && validLanguages.includes(userLang)) {
-                        initialLang = userLang;
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching user language, defaulting to Portuguese.", error);
-            }
-        }
-        await loadTranslations(initialLang);
-    };
-    fetchUserLanguage();
-  }, [currentUser, loadTranslations]);
+    loadTranslations();
+  }, [loadTranslations]);
 
   const setLanguage = async (lang: Language) => {
-    await loadTranslations(lang);
-    if (currentUser) {
-      try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        await updateDoc(userDocRef, { language: lang });
-      } catch (error) {
-        console.error("Failed to update user language preference:", error);
-      }
-    }
+    // This function is now a no-op as the language is fixed to Portuguese.
+    return Promise.resolve();
   };
 
   const t = (key: string, replacements?: { [key:string]: string | number }): string => {

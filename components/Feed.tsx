@@ -225,10 +225,7 @@ const Feed: React.FC = () => {
         await deleteDoc(pulseRef);
         await deleteObject(mediaRef);
         
-        // FIX: Explicitly type the `prev` parameter in the state updater for
-        // `viewingUserWithPulses`. This resolves TypeScript errors where `prev` was
-        // being inferred as `unknown`, preventing property access and object spreading.
-        // FIX: Explicitly typed the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
+        // FIX: Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
         setViewingUserWithPulses((prev: UserWithPulses | null) => {
             if (!prev) return null;
             const updatedPulses = prev.pulses.filter(p => p.id !== pulseToDelete.id);

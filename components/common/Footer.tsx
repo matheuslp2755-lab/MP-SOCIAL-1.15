@@ -2,7 +2,7 @@ import React from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 
 const Footer: React.FC = () => {
-    const { t } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
     
     const footerLinks = [
         { key: 'meta', name: t('footer.links.meta') },
@@ -30,7 +30,15 @@ const Footer: React.FC = () => {
         ))}
       </div>
       <div className="flex justify-center items-center gap-4">
-        <span>{t('footer.language')}</span>
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as 'en' | 'pt')}
+          className="bg-transparent border-none text-zinc-500 dark:text-zinc-400 focus:outline-none cursor-pointer"
+          aria-label="Change language"
+        >
+          <option value="pt" className="dark:bg-zinc-800">Português (Brasil)</option>
+          <option value="en" className="dark:bg-zinc-800">English</option>
+        </select>
         <span>{t('footer.copyright', { year: new Date().getFullYear() })}</span>
       </div>
     </footer>

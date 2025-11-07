@@ -170,6 +170,9 @@
   "pulseBar": {
     "viewPulse": "Ver o pulso de {username}"
   },
+  "welcome": {
+    "title": "Bem vindo ao MP social 1.15"
+  },
   "footer": {
     "language": "Português (Brasil)",
     "copyright": "© {year} MP SOCIAL da Meta",

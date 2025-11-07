@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface WelcomeAnimationProps {
   onAnimationEnd: () => void;
 }
 
 const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd }) => {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState<'entering' | 'visible' | 'exiting'>('entering');
 
   useEffect(() => {
@@ -49,7 +51,7 @@ const WelcomeAnimation: React.FC<WelcomeAnimationProps> = ({ onAnimationEnd }) =
       <h1
         className={`text-4xl sm:text-5xl font-serif text-white text-center transition-all duration-1000 ease-out ${textClasses[phase]}`}
       >
-        Bem vindo ao MP social 1.15
+        {t('welcome.title')}
       </h1>
     </div>
   );

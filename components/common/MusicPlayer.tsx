@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 
 const PlayIcon = ({ className = "w-6 h-6" }) => <svg className={className} fill="currentColor" viewBox="0 0 20 20"><path d="M4.018 14.382A1 1 0 013 13.5V6.5a1 1 0 011.528-.854l6.5 3.5a1 1 0 010 1.708l-6.5 3.5a1 1 0 01-.51.128z"></path></svg>;

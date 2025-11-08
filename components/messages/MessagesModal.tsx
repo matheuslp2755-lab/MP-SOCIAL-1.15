@@ -88,6 +88,7 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                 <ChatWindow 
                     conversationId={activeConversationId} 
                     onBack={() => setActiveConversationId(null)}
+                    onClose={onClose}
                 />
             );
         }

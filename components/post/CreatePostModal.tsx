@@ -206,7 +206,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                         <h2 className="text-lg font-semibold">{t('createPost.title')}</h2>
                         {imagePreview && (
                             <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
-                                {t('createPost.share')}
+                                {submitting ? t('createPost.sharing') : t('createPost.share')}
                             </Button>
                         )}
                     </div>

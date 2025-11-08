@@ -27,6 +27,7 @@ import { useLanguage } from '../../context/LanguageContext';
 interface ChatWindowProps {
     conversationId: string | null;
     onBack: () => void;
+    onClose: () => void;
 }
 
 interface Message {
@@ -103,7 +104,7 @@ const ImageIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose }) => {
     const { t } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -550,6 +551,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                             </div>
                         )}
                     </div>
+                    <button onClick={onClose} className="text-3xl font-light leading-none" aria-label={t('messages.close')}>&times;</button>
                 </header>
             )}
             <div className="flex-grow py-4 px-2 overflow-y-auto">

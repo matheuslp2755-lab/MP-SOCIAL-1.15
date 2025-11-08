@@ -64,7 +64,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchMode }) => {
         isPrivate: false,
         createdAt: serverTimestamp(),
         lastSeen: serverTimestamp(),
-        language: 'pt',
+        language: 'pt-BR',
       });
 
       // Auth state change will be handled by App.tsx

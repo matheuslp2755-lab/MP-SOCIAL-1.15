@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Only 'pt' is a valid language now.
-type Language = 'pt';
+// Set 'pt-BR' as the language.
+type Language = 'pt-BR';
 
 interface LanguageContextType {
   language: Language;
@@ -14,8 +14,8 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Hardcode the language to Portuguese.
-  const language: Language = 'pt';
+  // Hardcode the language to Brazilian Portuguese.
+  const language: Language = 'pt-BR';
   const [messages, setMessages] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +26,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const loadTranslations = async () => {
       setLoading(true);
       try {
-        // Always load the Portuguese translation file.
+        // Load the Portuguese translation file. The filename remains pt.json.
         const response = await fetch(`/locales/pt.json`);
         if (!response.ok) throw new Error('Failed to load translations');
         const newMessages = await response.json();

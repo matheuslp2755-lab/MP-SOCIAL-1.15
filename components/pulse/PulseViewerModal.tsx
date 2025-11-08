@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
@@ -58,37 +56,32 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
     const [isDeleting, setIsDeleting] = useState(false);
     const [viewsCount, setViewsCount] = useState(0);
     const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
-    
+    const currentUser = auth.currentUser;
+
     useEffect(() => {
         setLocalPulses([...pulses]);
-        if (currentIndex >= pulses.length) {
-            setCurrentIndex(Math.max(0, pulses.length - 1));
+        if (currentIndex >= pulses.length && pulses.length > 0) {
+            setCurrentIndex(pulses.length - 1);
+        } else if (pulses.length === 0) {
+            onClose();
         }
-    }, [pulses, currentIndex]);
+    }, [pulses, currentIndex, onClose]);
 
-
-    const currentUser = auth.currentUser;
     const currentPulse = localPulses[currentIndex];
 
     useEffect(() => {
-        const recordPulseView = async () => {
-            if (!currentPulse || !currentUser || currentUser.uid === currentPulse.authorId) {
-                return;
-            }
-
-            try {
-                const viewDocRef = doc(db, 'pulses', currentPulse.id, 'views', currentUser.uid);
-                await setDoc(viewDocRef, {
-                    userId: currentUser.uid,
-                    viewedAt: serverTimestamp()
-                });
-            } catch (error) {
-                console.error("Error recording pulse view:", error);
-            }
+        if (!currentPulse || !currentUser || currentUser.uid === authorInfo.id) return;
+        
+        const registerView = async () => {
+            const viewRef = doc(db, 'pulses', currentPulse.id, 'views', currentUser.uid);
+            await setDoc(viewRef, {
+                userId: currentUser.uid,
+                viewedAt: serverTimestamp()
+            });
         };
-
-        recordPulseView();
-    }, [currentPulse, currentUser]);
+        
+        registerView().catch(console.error);
+    }, [currentPulse, currentUser, authorInfo.id]);
 
     useEffect(() => {
         if (!currentPulse) return;
@@ -101,146 +94,113 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
         return () => unsubscribe();
     }, [currentPulse]);
 
-    if (!currentPulse) {
-        onClose();
-        return null;
-    }
-    const isOwner = currentUser?.uid === currentPulse.authorId;
-    
-    const handleDelete = async () => {
-        setIsDeleting(true);
-        await onDelete(currentPulse);
-        setIsDeleting(false);
-        setIsDeleteConfirmOpen(false);
+    const goToNext = () => {
+        setCurrentIndex(prev => (prev + 1) % localPulses.length);
     };
 
-    const canGoNext = currentIndex < localPulses.length - 1;
-    const canGoPrev = currentIndex > 0;
+    const goToPrev = () => {
+        setCurrentIndex(prev => (prev - 1 + localPulses.length) % localPulses.length);
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') goToNext();
+            if (e.key === 'ArrowLeft') goToPrev();
+            if (e.key === 'Escape') onClose();
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [localPulses.length]);
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await onDelete(currentPulse);
+        } catch (error) {
+            console.error("Error during deletion callback:", error);
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteConfirmOpen(false);
+        }
+    };
     
+    if (!currentPulse) {
+        return null;
+    }
+    
+    const isVideo = currentPulse.mediaUrl.includes('.mp4') || currentPulse.mediaUrl.includes('.webm');
+
     return (
-        <>
-            <PulseViewsModal
-                isOpen={isViewsModalOpen}
-                onClose={() => setIsViewsModalOpen(false)}
-                pulseId={currentPulse.id}
-            />
-            <div 
-                className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50 select-none"
-                onClick={onClose}
-            >
-                {canGoPrev && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => i - 1); }} 
-                        className="absolute left-2 md:left-4 text-white bg-black/40 rounded-full p-2 z-20 hover:bg-black/70 transition-colors"
-                        aria-label={t('pulseViewer.previous')}
-                    >
-                        <PrevIcon className="w-6 h-6" />
-                    </button>
+      <>
+        <div className="fixed inset-0 bg-black z-50 flex items-center justify-center" onClick={onClose}>
+            <div className="relative aspect-[9/16] h-full max-h-[90vh] max-w-[90vw] my-auto" onClick={e => e.stopPropagation()}>
+                {isVideo ? (
+                    <video src={currentPulse.mediaUrl} autoPlay controls className="w-full h-full object-contain rounded-lg" />
+                ) : (
+                    <img src={currentPulse.mediaUrl} alt={currentPulse.legenda} className="w-full h-full object-contain rounded-lg" />
                 )}
-
-                <div 
-                    className="relative w-full max-w-sm h-full max-h-[95vh] flex flex-col items-center justify-center" 
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="absolute top-0 left-0 right-0 p-4 z-20 bg-gradient-to-b from-black/50 to-transparent">
-                        <div className="flex items-center gap-2 mb-2">
-                           {localPulses.map((_, index) => (
-                                <div key={index} className="flex-1 h-1 bg-white/30 rounded-full">
-                                    <div className={`h-full bg-white rounded-full transition-all duration-300 ${index === currentIndex ? 'w-full' : 'w-0'}`} style={{ width: index < currentIndex ? '100%' : '0%' }}/>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <img src={authorInfo.avatar} alt={authorInfo.username} className="w-8 h-8 rounded-full object-cover" />
-                                <p className="text-white font-semibold text-sm">{authorInfo.username}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {isOwner && (
-                                    <>
-                                        {viewsCount > 0 && (
-                                            <button 
-                                                onClick={() => setIsViewsModalOpen(true)}
-                                                className="text-white p-2 rounded-full hover:bg-white/20 flex items-center gap-1 text-sm"
-                                                aria-label={`${viewsCount} ${viewsCount === 1 ? t('pulseViewer.viewSingular') : t('pulseViewer.viewPlural')}`}
-                                            >
-                                                <EyeIcon className="w-5 h-5" />
-                                                {viewsCount}
-                                            </button>
-                                        )}
-                                        <button 
-                                            onClick={() => setIsDeleteConfirmOpen(true)} 
-                                            className="text-white p-2 rounded-full hover:bg-white/20"
-                                            aria-label={t('pulseViewer.delete')}
-                                        >
-                                            <TrashIcon className="w-5 h-5" />
-                                        </button>
-                                    </>
-                                )}
-                                <button onClick={onClose} className="text-white text-3xl">&times;</button>
-                            </div>
-                        </div>
-                    </div>
-                   
-
-                    <div className="relative w-full h-full rounded-lg overflow-hidden flex items-center justify-center bg-black">
-                        {currentPulse.mediaUrl.includes('.mp4') || currentPulse.mediaUrl.includes('.webm') ? (
-                            <video key={currentPulse.id} src={currentPulse.mediaUrl} controls autoPlay className="w-full h-full object-contain" />
-                        ) : (
-                            <img key={currentPulse.id} src={currentPulse.mediaUrl} alt={currentPulse.legenda || 'Pulse'} className="w-full h-full object-contain" />
-                        )}
-
-                        {currentPulse.spotifyTrackId && (
-                            <div className="absolute bottom-16 left-4 right-4 z-10">
-                                <SpotifyPlayer trackId={currentPulse.spotifyTrackId} />
-                            </div>
-                        )}
-                        
-                        {currentPulse.legenda && (
-                            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-                                <p className="text-white text-center text-sm">{currentPulse.legenda}</p>
-                            </div>
-                        )}
+                <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/50 to-transparent rounded-t-lg">
+                    <div className="flex items-center gap-3">
+                        <img src={authorInfo.avatar} alt={authorInfo.username} className="w-10 h-10 rounded-full object-cover" />
+                        <span className="font-semibold text-white">{authorInfo.username}</span>
+                        <button onClick={onClose} className="ml-auto text-white text-3xl font-light">&times;</button>
                     </div>
                 </div>
-
-                {canGoNext && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(i => i + 1); }} 
-                        className="absolute right-2 md:right-4 text-white bg-black/40 rounded-full p-2 z-20 hover:bg-black/70 transition-colors"
-                        aria-label={t('pulseViewer.next')}
-                    >
-                        <NextIcon className="w-6 h-6" />
-                    </button>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent rounded-b-lg text-white">
+                    {currentPulse.legenda && <p className="text-sm mb-2">{currentPulse.legenda}</p>}
+                    {currentPulse.spotifyTrackId && <SpotifyPlayer trackId={currentPulse.spotifyTrackId} />}
+                    {currentUser?.uid === authorInfo.id && (
+                        <div className="flex items-center gap-4 mt-2">
+                             <button onClick={() => setIsViewsModalOpen(true)} className="flex items-center gap-1 text-xs font-semibold">
+                                <EyeIcon className="w-4 h-4" />
+                                {viewsCount} {viewsCount === 1 ? t('pulseViewer.viewSingular') : t('pulseViewer.viewPlural')}
+                            </button>
+                            <button onClick={() => setIsDeleteConfirmOpen(true)} className="ml-auto p-1" title={t('pulseViewer.delete')}>
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+                {localPulses.length > 1 && (
+                    <>
+                        <button onClick={goToPrev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 rounded-full p-2" aria-label={t('pulseViewer.previous')}>
+                            <PrevIcon className="w-6 h-6 text-white" />
+                        </button>
+                        <button onClick={goToNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 rounded-full p-2" aria-label={t('pulseViewer.next')}>
+                            <NextIcon className="w-6 h-6 text-white" />
+                        </button>
+                    </>
                 )}
             </div>
-            
-            {isDeleteConfirmOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[60]">
-                    <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
-                        <h3 className="text-lg font-semibold mb-2">{t('pulseViewer.deleteTitle')}</h3>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                            {t('pulseViewer.deleteBody')}
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <button 
-                                onClick={handleDelete}
-                                disabled={isDeleting}
-                                className="w-full px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold disabled:opacity-50"
-                            >
-                                {isDeleting ? t('common.deleting') : t('common.delete')}
-                            </button>
-                            <button 
-                                onClick={() => setIsDeleteConfirmOpen(false)}
-                                className="w-full px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold"
-                            >
-                                {t('common.cancel')}
-                            </button>
-                        </div>
+        </div>
+
+        {isDeleteConfirmOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[60]">
+                <div className="bg-white dark:bg-black rounded-lg shadow-xl p-6 w-full max-w-sm text-center border dark:border-zinc-800">
+                    <h3 className="text-lg font-semibold mb-2">{t('pulseViewer.deleteTitle')}</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                        {t('pulseViewer.deleteBody')}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                         <button onClick={handleDelete} disabled={isDeleting} className="w-full px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold disabled:opacity-50">
+                            {isDeleting ? t('common.deleting') : t('common.delete')}
+                        </button>
+                        <button onClick={() => setIsDeleteConfirmOpen(false)} className="w-full px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold">
+                            {t('common.cancel')}
+                        </button>
                     </div>
                 </div>
-            )}
-        </>
+            </div>
+        )}
+
+        <PulseViewsModal
+            isOpen={isViewsModalOpen}
+            onClose={() => setIsViewsModalOpen(false)}
+            pulseId={currentPulse.id}
+        />
+      </>
     );
 };
 

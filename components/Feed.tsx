@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -38,9 +39,11 @@ type PulseType = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
-    musicName?: string;
-    musicArtist?: string;
-    musicPreviewUrl?: string;
+    musica?: {
+        nome: string;
+        artista: string;
+        preview: string;
+    };
 };
 
 type UserWithPulses = {

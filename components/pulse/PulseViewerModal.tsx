@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import PulseViewsModal from './PulseViewsModal';
-import SpotifyPlayer from '../common/SpotifyPlayer';
+import MusicPlayer from '../common/MusicPlayer';
 
 type Pulse = {
     id: string;
@@ -10,9 +10,11 @@ type Pulse = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
-    musicName?: string;
-    musicArtist?: string;
-    spotifyTrackId?: string;
+    musica?: {
+        nome: string;
+        artista: string;
+        preview: string;
+    };
 };
 
 interface PulseViewerModalProps {
@@ -150,7 +152,14 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent rounded-b-lg text-white">
                     {currentPulse.legenda && <p className="text-sm mb-2">{currentPulse.legenda}</p>}
-                    {currentPulse.spotifyTrackId && <SpotifyPlayer trackId={currentPulse.spotifyTrackId} />}
+                    {currentPulse.musica?.preview && (
+                        <MusicPlayer
+                            trackName={currentPulse.musica.nome}
+                            artistName={currentPulse.musica.artista}
+                            previewUrl={currentPulse.musica.preview}
+                            isPulseVersion={true}
+                        />
+                    )}
                     {currentUser?.uid === authorInfo.id && (
                         <div className="flex items-center gap-4 mt-2">
                              <button onClick={() => setIsViewsModalOpen(true)} className="flex items-center gap-1 text-xs font-semibold">

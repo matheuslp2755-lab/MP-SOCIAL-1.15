@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import PulseViewsModal from './PulseViewsModal';
-import MusicPlayer from '../common/MusicPlayer';
+import SpotifyPlayer from '../common/SpotifyPlayer';
 
 type Pulse = {
     id: string;
@@ -13,7 +14,7 @@ type Pulse = {
     authorId: string;
     musicName?: string;
     musicArtist?: string;
-    musicPreviewUrl?: string;
+    spotifyTrackId?: string;
 };
 
 interface PulseViewerModalProps {
@@ -189,14 +190,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                             <img key={currentPulse.id} src={currentPulse.mediaUrl} alt={currentPulse.legenda || 'Pulse'} className="w-full h-full object-contain" />
                         )}
 
-                        {currentPulse.musicPreviewUrl && (
+                        {currentPulse.spotifyTrackId && (
                             <div className="absolute bottom-16 left-4 right-4 z-10">
-                                <MusicPlayer 
-                                    trackName={currentPulse.musicName}
-                                    artistName={currentPulse.musicArtist}
-                                    previewUrl={currentPulse.musicPreviewUrl}
-                                    isPulseVersion={true}
-                                />
+                                <SpotifyPlayer trackId={currentPulse.spotifyTrackId} />
                             </div>
                         )}
                         

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -104,7 +105,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
             if (selectedMusic) {
                 pulseData.musicName = selectedMusic.name;
                 pulseData.musicArtist = selectedMusic.artists[0]?.name || 'Unknown Artist';
-                pulseData.musicPreviewUrl = selectedMusic.preview_url;
+                pulseData.spotifyTrackId = selectedMusic.id;
             }
 
             await addDoc(collection(db, 'pulses'), pulseData);

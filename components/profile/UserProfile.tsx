@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import {
@@ -63,7 +64,7 @@ type Post = {
     timestamp: { seconds: number; nanoseconds: number };
     musicName?: string;
     musicArtist?: string;
-    musicPreviewUrl?: string;
+    spotifyTrackId?: string;
 };
 
 type Pulse = {
@@ -74,7 +75,7 @@ type Pulse = {
     authorId: string;
     musicName?: string;
     musicArtist?: string;
-    musicPreviewUrl?: string;
+    spotifyTrackId?: string;
 };
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {

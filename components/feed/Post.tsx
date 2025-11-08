@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
-import MusicPlayer from '../common/MusicPlayer';
+import SpotifyPlayer from '../common/SpotifyPlayer';
 
 type PostType = {
     id: string;
@@ -17,7 +18,7 @@ type PostType = {
     timestamp: { seconds: number; nanoseconds: number };
     musicName?: string;
     musicArtist?: string;
-    musicPreviewUrl?: string;
+    spotifyTrackId?: string;
 };
 
 type CommentType = {
@@ -389,12 +390,8 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-            {post.musicPreviewUrl && (
-                <MusicPlayer 
-                    trackName={post.musicName}
-                    artistName={post.musicArtist}
-                    previewUrl={post.musicPreviewUrl}
-                />
+            {post.spotifyTrackId && (
+                <SpotifyPlayer trackId={post.spotifyTrackId} />
             )}
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">

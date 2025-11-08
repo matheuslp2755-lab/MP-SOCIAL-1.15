@@ -1,10 +1,12 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
-type Language = 'en' | 'pt';
+// Only 'pt' is a valid language now.
+type Language = 'pt';
 
 interface LanguageContextType {
   language: Language;
-  setLanguage: (language: Language) => Promise<void>;
+  // Keep setLanguage as a no-op function for components that might still call it, to avoid crashes.
+  setLanguage: (language: Language) => void;
   t: (key: string, replacements?: { [key: string]: string | number }) => string;
   loading: boolean;
 }
@@ -12,41 +14,37 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('pt');
-  const [messages, setMessages] = useState<Record<string, string>>({});
+  // Hardcode the language to Portuguese.
+  const language: Language = 'pt';
+  const [messages, setMessages] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
 
-  const loadTranslations = useCallback(async () => {
-    setLoading(true);
-    try {
+  // This function does nothing, as the language is fixed.
+  const setLanguage = (lang: Language) => {};
+
+  useEffect(() => {
+    const loadTranslations = async () => {
+      setLoading(true);
+      try {
+        // Always load the Portuguese translation file.
         const response = await fetch(`/locales/pt.json`);
-        if (!response.ok) {
-            console.error(`Failed to load pt.json. This is a critical error.`);
-            throw new Error('Failed to load Portuguese translations.');
-        }
+        if (!response.ok) throw new Error('Failed to load translations');
         const newMessages = await response.json();
         setMessages(newMessages);
-        setLanguageState('pt');
-    } catch (error) {
-        console.error("Could not load translation file.", error);
+      } catch (error) {
+        console.error(`Could not load translation file for pt.`, error);
         setMessages({});
-    } finally {
+      } finally {
         setLoading(false);
-    }
-  }, []);
-  
-  useEffect(() => {
-    loadTranslations();
-  }, [loadTranslations]);
+      }
+    };
 
-  const setLanguage = async (lang: Language) => {
-    // This function is now a no-op as the language is fixed to Portuguese.
-    return Promise.resolve();
-  };
+    loadTranslations();
+  }, []); // The effect runs only once on mount.
 
   const t = (key: string, replacements?: { [key:string]: string | number }): string => {
-    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages as any) || key;
-    if (replacements) {
+    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages) || key;
+    if (replacements && typeof message === 'string') {
       Object.keys(replacements).forEach(placeholder => {
         message = message.replace(`{${placeholder}}`, String(replacements[placeholder]));
       });

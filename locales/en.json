@@ -8,7 +8,7 @@
     "user": "User"
   },
   "login": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "emailLabel": "Email address",
     "passwordLabel": "Password",
     "loginButton": "Log In",
@@ -22,7 +22,7 @@
     "googlePlayAlt": "Get it on Google Play"
   },
   "signup": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "subtitle": "Sign up to see photos and videos from your friends.",
     "emailLabel": "Email address",
     "usernameLabel": "Username",
@@ -36,7 +36,7 @@
     "genericError": "Failed to create an account. Please try again."
   },
   "header": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "searchPlaceholder": "Search",
     "noResults": "No results found.",
     "following": "Following",
@@ -57,7 +57,7 @@
     "decline": "Decline"
   },
   "feed": {
-    "welcome": "Welcome to MP SOCIAL",
+    "welcome": "Welcome to Mundo MP",
     "empty": "It looks like your feed is empty.",
     "emptySuggestion": "Use the search bar to find and follow your friends to see their photos and videos."
   },
@@ -174,11 +174,11 @@
     "viewPulse": "View {username}'s pulse"
   },
   "welcome": {
-    "title": "Welcome to MP social 1.15"
+    "title": "Welcome to Mundo MP 1.15"
   },
   "footer": {
     "language": "English",
-    "copyright": "© {year} MP SOCIAL from Meta",
+    "copyright": "© {year} Mundo MP from Meta",
     "links": {
       "meta": "Meta",
       "about": "About",

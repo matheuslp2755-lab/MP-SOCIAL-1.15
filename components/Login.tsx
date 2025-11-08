@@ -6,30 +6,13 @@ import Button from './common/Button';
 import { useLanguage } from '../context/LanguageContext';
 
 const AppLogo: React.FC = () => {
+    const { t } = useLanguage();
     return (
         <h1 className="text-4xl font-serif text-center mb-8">
-            MP SOCIAL
+            {t('login.title')}
         </h1>
     )
 };
-
-const AppStoreButton: React.FC = () => {
-    const { t } = useLanguage();
-    return (
-        <a href="#" className="inline-block">
-            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_ios_portuguese-pt.png/43411c5d0645.png" alt={t('login.appStoreAlt')} className="h-10"/>
-        </a>
-    );
-}
-
-const GooglePlayButton: React.FC = () => {
-    const { t } = useLanguage();
-    return (
-        <a href="#" className="inline-block">
-            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_android_portuguese-pt.png/13c858b448a4.png" alt={t('login.googlePlayAlt')} className="h-10"/>
-        </a>
-    );
-}
 
 interface LoginProps {
   onSwitchMode: () => void;
@@ -113,15 +96,6 @@ const Login: React.FC<LoginProps> = ({ onSwitchMode }) => {
             </button>
           </p>
         </div>
-
-        <div className="text-center mt-4 text-sm">
-            <p className="mb-4">{t('login.getTheApp')}</p>
-            <div className="flex justify-center gap-4">
-                <AppStoreButton />
-                <GooglePlayButton />
-            </div>
-        </div>
-
       </div>
     </div>
   );

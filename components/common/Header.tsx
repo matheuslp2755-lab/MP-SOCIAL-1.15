@@ -462,7 +462,7 @@ const Header: React.FC<HeaderProps> = ({ onSelectUser, onGoHome, onOpenCreatePos
             <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-4xl gap-4">
                 
                 <h1 onClick={onGoHome} className={`text-2xl font-serif cursor-pointer transition-all duration-300 ${isMobileSearchVisible ? 'hidden sm:block' : 'block'}`}>
-                    MP SOCIAL
+                    {t('header.title')}
                 </h1>
 
                 <div 

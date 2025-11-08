@@ -8,7 +8,7 @@
     "user": "Usuário"
   },
   "login": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "emailLabel": "Endereço de e-mail",
     "passwordLabel": "Senha",
     "loginButton": "Entrar",
@@ -22,7 +22,7 @@
     "googlePlayAlt": "Disponível no Google Play"
   },
   "signup": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "subtitle": "Cadastre-se para ver fotos e vídeos dos seus amigos.",
     "emailLabel": "Endereço de e-mail",
     "usernameLabel": "Nome de usuário",
@@ -36,7 +36,7 @@
     "genericError": "Falha ao criar uma conta. Por favor, tente novamente."
   },
   "header": {
-    "title": "MP SOCIAL",
+    "title": "Mundo MP",
     "searchPlaceholder": "Pesquisar",
     "noResults": "Nenhum resultado encontrado.",
     "following": "Seguindo",
@@ -57,7 +57,7 @@
     "decline": "Recusar"
   },
   "feed": {
-    "welcome": "Bem-vindo ao MP SOCIAL",
+    "welcome": "Bem-vindo ao Mundo MP",
     "empty": "Parece que seu feed está vazio.",
     "emptySuggestion": "Use a barra de pesquisa para encontrar e seguir seus amigos para ver as fotos e vídeos deles."
   },
@@ -174,11 +174,11 @@
     "viewPulse": "Ver o pulso de {username}"
   },
   "welcome": {
-    "title": "Bem vindo ao MP social 1.15"
+    "title": "Bem vindo ao Mundo MP 1.15"
   },
   "footer": {
     "language": "Português (Brasil)",
-    "copyright": "© {year} MP SOCIAL da Meta",
+    "copyright": "© {year} Mundo MP da Meta",
     "links": {
       "meta": "Meta",
       "about": "Sobre",

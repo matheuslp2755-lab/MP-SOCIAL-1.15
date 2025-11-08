@@ -225,15 +225,16 @@ const Feed: React.FC = () => {
         await deleteDoc(pulseRef);
         await deleteObject(mediaRef);
         
-        // Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
-        setViewingUserWithPulses((prev) => {
+        // FIX: Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
+        setViewingUserWithPulses((prev: UserWithPulses | null) => {
             if (!prev) return null;
             const updatedPulses = prev.pulses.filter(p => p.id !== pulseToDelete.id);
             if (updatedPulses.length === 0) return null;
             return { ...prev, pulses: updatedPulses };
         });
         
-        setPulsesByAuthor(prevMap => {
+        // FIX: Explicitly type the 'prevMap' parameter to resolve TypeScript inference issues.
+        setPulsesByAuthor((prevMap: Map<string, UserWithPulses>) => {
             const newMap = new Map(prevMap);
             const authorData = newMap.get(pulseToDelete.authorId);
             if (authorData) {
@@ -241,7 +242,8 @@ const Feed: React.FC = () => {
                 if (updatedPulses.length === 0) {
                     newMap.delete(pulseToDelete.authorId);
                 } else {
-                    newMap.set(pulseToDelete.authorId, { ...authorData, pulses: updatedPulses });
+                    // FIX: Reconstruct object to avoid spread operator issue with inferred types.
+                    newMap.set(pulseToDelete.authorId, { author: authorData.author, pulses: updatedPulses });
                 }
             }
             return newMap;

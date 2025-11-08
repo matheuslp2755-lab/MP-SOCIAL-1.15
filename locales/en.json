@@ -134,7 +134,8 @@
     "noResults": "No results found.",
     "apiError": "Could not load music right now.",
     "connectSpotifyMessage": "To search for music, please connect to Spotify.",
-    "connectSpotifyButton": "Connect with Spotify"
+    "connectSpotifyButton": "Connect with Spotify",
+    "selectButton": "Select"
   },
   "messages": {
     "title": "Messages",
@@ -153,7 +154,11 @@
     "deleteTitle": "Delete Message?",
     "deleteBody": "Are you sure you want to delete this message? This cannot be undone.",
     "newMessageTitle": "New Message",
-    "searchUsers": "Search for users..."
+    "searchUsers": "Search for users...",
+    "videoTooLong": "Video cannot be longer than 30 seconds.",
+    "uploadError": "Failed to upload media. Please try again.",
+    "photo": "Photo",
+    "video": "Video"
   },
   "crystal": {
     "formed": "💎 A new Connection Crystal was formed!",

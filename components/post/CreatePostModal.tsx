@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -54,7 +48,35 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const { t } = useLanguage();
 
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen) {
+             // Restore draft if it exists
+            const draftString = localStorage.getItem('spotify_auth_draft');
+            if (draftString) {
+                const draft = JSON.parse(draftString);
+                if (draft.type === 'post') {
+                    setCaption(draft.caption || '');
+                    setIsVenting(draft.isVenting || false);
+                    setAllowedViewers(draft.allowedViewers || []);
+                    setSelectedMusic(draft.selectedMusic || null);
+                    if (draft.imageDataUrl) {
+                        fetch(draft.imageDataUrl)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const file = new File([blob], draft.imageName, { type: draft.imageType });
+                                setImageFile(file);
+                                setImagePreview(URL.createObjectURL(file));
+                            });
+                    }
+                    localStorage.removeItem('spotify_auth_draft');
+                }
+            }
+
+            const checkSpotifyAuth = async () => {
+                const token = await getAccessToken();
+                setIsSpotifyConnected(!!token);
+            };
+            checkSpotifyAuth();
+        } else {
             setImageFile(null);
             setImagePreview(null);
             setCaption('');
@@ -64,16 +86,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             setIsSpotifyConnected(null);
             setIsVenting(false);
             setAllowedViewers([]);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (isOpen) {
-            const checkSpotifyAuth = async () => {
-                const token = await getAccessToken();
-                setIsSpotifyConnected(!!token);
-            };
-            checkSpotifyAuth();
         }
     }, [isOpen]);
 
@@ -95,6 +107,33 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const handleSelectMusic = (track: SpotifyTrack) => {
         setSelectedMusic(track);
         setShowMusicSearch(false);
+    };
+    
+    const handleConnectSpotify = () => {
+        const saveDraft = (imageDataUrl?: string) => {
+            const draft = {
+                type: 'post',
+                imageDataUrl: imageDataUrl,
+                imageType: imageFile?.type,
+                imageName: imageFile?.name,
+                caption: caption,
+                isVenting: isVenting,
+                allowedViewers: allowedViewers,
+                selectedMusic: selectedMusic,
+            };
+            localStorage.setItem('spotify_auth_draft', JSON.stringify(draft));
+            redirectToAuth();
+        };
+    
+        if (imageFile) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                saveDraft(reader.result as string);
+            };
+            reader.readAsDataURL(imageFile);
+        } else {
+            saveDraft();
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -233,7 +272,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                                 </button>
                                             )}
                                             {showMusicSearch && (
-                                                <MusicSearch selectedTrack={selectedMusic} onSelectMusic={handleSelectMusic} onClose={() => setShowMusicSearch(false)} />
+                                                <MusicSearch 
+                                                    selectedTrack={selectedMusic} 
+                                                    onSelectMusic={handleSelectMusic} 
+                                                    onClose={() => setShowMusicSearch(false)}
+                                                    onConnect={handleConnectSpotify}
+                                                />
                                             )}
                                         </>
                                     ) : (
@@ -243,7 +287,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                             </p>
                                             <button
                                                 type="button"
-                                                onClick={redirectToAuth}
+                                                onClick={handleConnectSpotify}
                                                 className="bg-green-500 text-white font-semibold rounded-lg py-1.5 px-4 text-sm hover:bg-green-600 transition-colors"
                                             >
                                                 {t('musicSearch.connectSpotifyButton')}

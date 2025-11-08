@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -52,7 +47,40 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen) {
+             // Restore draft if it exists
+            const draftString = localStorage.getItem('spotify_auth_draft');
+            if (draftString) {
+                const draft = JSON.parse(draftString);
+                if (draft.type === 'pulse') {
+                    setCaption(draft.caption || '');
+                    setIsVenting(draft.isVenting || false);
+                    setAllowedViewers(draft.allowedViewers || []);
+                    setSelectedMusic(draft.selectedMusic || null);
+                    if (draft.mediaDataUrl) {
+                        fetch(draft.mediaDataUrl)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const file = new File([blob], draft.mediaName, { type: draft.mediaType });
+                                if (file.type.startsWith('image/')) {
+                                    setMediaType('image');
+                                } else if (file.type.startsWith('video/')) {
+                                    setMediaType('video');
+                                }
+                                setMediaFile(file);
+                                setMediaPreview(URL.createObjectURL(file));
+                            });
+                    }
+                    localStorage.removeItem('spotify_auth_draft');
+                }
+            }
+
+            const checkSpotifyAuth = async () => {
+                const token = await getAccessToken();
+                setIsSpotifyConnected(!!token);
+            };
+            checkSpotifyAuth();
+        } else {
             setMediaFile(null);
             setMediaPreview(null);
             setMediaType(null);
@@ -63,16 +91,6 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
             setIsSpotifyConnected(null);
             setIsVenting(false);
             setAllowedViewers([]);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (isOpen) {
-            const checkSpotifyAuth = async () => {
-                const token = await getAccessToken();
-                setIsSpotifyConnected(!!token);
-            };
-            checkSpotifyAuth();
         }
     }, [isOpen]);
 
@@ -102,6 +120,33 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
     const handleSelectMusic = (track: SpotifyTrack) => {
         setSelectedMusic(track);
         setShowMusicSearch(false);
+    };
+
+    const handleConnectSpotify = () => {
+        const saveDraft = (mediaDataUrl?: string) => {
+            const draft = {
+                type: 'pulse',
+                mediaDataUrl: mediaDataUrl,
+                mediaType: mediaFile?.type,
+                mediaName: mediaFile?.name,
+                caption: caption,
+                isVenting: isVenting,
+                allowedViewers: allowedViewers,
+                selectedMusic: selectedMusic,
+            };
+            localStorage.setItem('spotify_auth_draft', JSON.stringify(draft));
+            redirectToAuth();
+        };
+    
+        if (mediaFile) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                saveDraft(reader.result as string);
+            };
+            reader.readAsDataURL(mediaFile);
+        } else {
+            saveDraft();
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -229,7 +274,12 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                                 </button>
                                             )}
                                             {showMusicSearch && (
-                                                <MusicSearch selectedTrack={selectedMusic} onSelectMusic={handleSelectMusic} onClose={() => setShowMusicSearch(false)} />
+                                                <MusicSearch 
+                                                    selectedTrack={selectedMusic} 
+                                                    onSelectMusic={handleSelectMusic} 
+                                                    onClose={() => setShowMusicSearch(false)}
+                                                    onConnect={handleConnectSpotify}
+                                                />
                                             )}
                                         </>
                                     ) : (
@@ -239,7 +289,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                             </p>
                                             <button
                                                 type="button"
-                                                onClick={redirectToAuth}
+                                                onClick={handleConnectSpotify}
                                                 className="bg-green-500 text-white font-semibold rounded-lg py-1.5 px-4 text-sm hover:bg-green-600 transition-colors"
                                             >
                                                 {t('musicSearch.connectSpotifyButton')}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { searchSpotifyTracks, SpotifyTrack, redirectToAuth } from './spotifyApi';
@@ -7,6 +6,7 @@ interface MusicSearchProps {
     onSelectMusic: (track: SpotifyTrack) => void;
     onClose: () => void;
     selectedTrack?: SpotifyTrack | null;
+    onConnect?: () => void;
 }
 
 const CheckIcon: React.FC = () => (
@@ -15,7 +15,7 @@ const CheckIcon: React.FC = () => (
     </svg>
 );
 
-const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selectedTrack }) => {
+const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selectedTrack, onConnect }) => {
     const { t } = useLanguage();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SpotifyTrack[]>([]);
@@ -87,7 +87,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                             {t('musicSearch.connectSpotifyMessage')}
                         </p>
                         <button 
-                            onClick={redirectToAuth}
+                            onClick={onConnect || redirectToAuth}
                             className="bg-green-500 text-white font-semibold rounded-lg py-1.5 px-4 text-sm hover:bg-green-600 transition-colors"
                         >
                             {t('musicSearch.connectSpotifyButton')}
@@ -99,26 +99,35 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                 {!authRequired && !loading && !error && query && results.length === 0 && <p className="text-center text-xs text-zinc-500 py-2">{t('musicSearch.noResults')}</p>}
                 {!authRequired && !loading && !error && results.map(track => {
                     const isSelected = selectedTrack?.id === track.id;
+                    const smallestImage = track.album.images[track.album.images.length - 1];
                     return (
                         <div
                             key={track.id}
-                            onClick={() => handleTrackClick(track)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleTrackClick(track); }}
-                            role="button"
-                            tabIndex={track.preview_url ? 0 : -1}
                             className={`p-2 flex items-center gap-3 rounded-md transition-colors ${
                                 isSelected
                                 ? 'bg-sky-100 dark:bg-sky-900'
                                 : track.preview_url
-                                ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
-                                : 'opacity-50 cursor-not-allowed'
+                                ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                : 'opacity-50'
                             }`}
                         >
+                            {smallestImage?.url && <img src={smallestImage.url} alt={track.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />}
                             <div className="flex-grow overflow-hidden">
                                 <p className="font-semibold text-sm truncate">{track.name}</p>
                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{track.artists.map(a => a.name).join(', ')}</p>
                             </div>
-                            {isSelected && <CheckIcon />}
+                            {isSelected ? (
+                                <CheckIcon />
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => handleTrackClick(track)}
+                                    disabled={!track.preview_url}
+                                    className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                >
+                                    {t('musicSearch.selectButton')}
+                                </button>
+                            )}
                         </div>
                     );
                 })}

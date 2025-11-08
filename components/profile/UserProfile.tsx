@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import {
@@ -423,7 +418,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     const handleDeletePulse = async (pulseToDelete: Pulse) => {
         try {
             const pulseRef = doc(db, 'pulses', pulseToDelete.id);
-            const mediaRef = storageRef(storage, pulseToDelete.mediaUrl);
+            const mediaPath = decodeURIComponent(pulseToDelete.mediaUrl.split('/o/')[1].split('?')[0]);
+            const mediaRef = storageRef(storage, mediaPath);
             
             await deleteDoc(pulseRef);
             await deleteObject(mediaRef);

@@ -8,11 +8,41 @@ import { LanguageProvider } from './context/LanguageContext';
 import WelcomeAnimation from './components/common/WelcomeAnimation';
 import { exchangeCodeForToken } from './components/common/spotifyApi';
 
+const Toast: React.FC<{ title: string; body: string; onClose: () => void }> = ({ title, body, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000); // Auto-close after 5 seconds
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-5 right-5 bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-4 max-w-sm z-[100] border dark:border-zinc-700 animate-slide-in-right">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <svg className="h-6 w-6 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+        </div>
+        <div className="ml-3 w-0 flex-1 pt-0.5">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{body}</p>
+        </div>
+        <div className="ml-4 flex-shrink-0 flex">
+          <button onClick={onClose} className="bg-white dark:bg-zinc-800 rounded-md inline-flex text-zinc-400 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
+            <span className="sr-only">Close</span>
+            &times;
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
+  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
 
   useEffect(() => {
     const welcomeKey = 'hasSeenWelcome_1_15';
@@ -112,8 +142,12 @@ const AppContent: React.FC = () => {
 
     const unsubscribeOnMessage = onMessage(messaging, (payload) => {
       console.log('Foreground message received. ', payload);
-      // You can display a toast notification here.
-      // For example: new Notification(payload.notification.title, { body: payload.notification.body });
+      if (payload.notification) {
+          setToast({
+              title: payload.notification.title || 'Nova Notificação',
+              body: payload.notification.body || ''
+          });
+      }
     });
     
     return () => {
@@ -160,6 +194,7 @@ const AppContent: React.FC = () => {
       {showWelcomeAnimation && (
         <WelcomeAnimation onAnimationEnd={() => setShowWelcomeAnimation(false)} />
       )}
+      {toast && <Toast title={toast.title} body={toast.body} onClose={() => setToast(null)} />}
       {renderApp()}
     </>
   );

@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -233,7 +228,8 @@ const Feed: React.FC = () => {
   const handlePulseDeleted = async (pulseToDelete: PulseType) => {
     try {
         const pulseRef = doc(db, 'pulses', pulseToDelete.id);
-        const mediaRef = storageRef(storage, pulseToDelete.mediaUrl);
+        const mediaPath = decodeURIComponent(pulseToDelete.mediaUrl.split('/o/')[1].split('?')[0]);
+        const mediaRef = storageRef(storage, mediaPath);
         
         await deleteDoc(pulseRef);
         await deleteObject(mediaRef);

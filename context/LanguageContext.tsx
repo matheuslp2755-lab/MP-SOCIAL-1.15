@@ -137,7 +137,8 @@ const messages = {
     "noResults": "Nenhum resultado encontrado.",
     "apiError": "Não foi possível carregar músicas agora.",
     "connectSpotifyMessage": "Para buscar músicas, conecte-se ao Spotify.",
-    "connectSpotifyButton": "Conectar com Spotify"
+    "connectSpotifyButton": "Conectar com Spotify",
+    "selectButton": "Selecionar"
   },
   "messages": {
     "title": "Mensagens",
@@ -156,7 +157,11 @@ const messages = {
     "deleteTitle": "Excluir Mensagem?",
     "deleteBody": "Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
     "newMessageTitle": "Nova Mensagem",
-    "searchUsers": "Procurar usuários..."
+    "searchUsers": "Procurar usuários...",
+    "videoTooLong": "O vídeo não pode ter mais de 30 segundos.",
+    "uploadError": "Falha ao enviar a mídia. Por favor, tente novamente.",
+    "photo": "Imagem",
+    "video": "Vídeo"
   },
   "crystal": {
     "formed": "💎 Um novo Cristal de Conexão foi formado!",

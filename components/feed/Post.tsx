@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
-import SpotifyPlayer from '../common/SpotifyPlayer';
+import MusicPlayer from '../common/MusicPlayer';
 
 type PostType = {
     id: string;
@@ -18,6 +19,7 @@ type PostType = {
     musicName?: string;
     musicArtist?: string;
     spotifyTrackId?: string;
+    musicPreviewUrl?: string;
 };
 
 type CommentType = {
@@ -67,7 +69,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
+  const [isIntersecting, setIsIntersecting] = useState(false);
   const postRef = useRef<HTMLElement>(null);
+  const viewRegistered = useRef(false);
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<UserSearchResult[]>([]);
@@ -94,19 +98,20 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   }, [post.id]);
   
   useEffect(() => {
-    if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
+    if (!postRef.current || !currentUser) {
         return;
     }
 
     const observer = new IntersectionObserver(
-        async ([entry]) => {
-            if (entry.isIntersecting) {
+        ([entry]) => {
+            setIsIntersecting(entry.isIntersecting);
+            if (entry.isIntersecting && !viewRegistered.current && currentUser.uid !== post.userId) {
+                viewRegistered.current = true;
                 const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
-                await setDoc(viewRef, {
+                setDoc(viewRef, {
                     userId: currentUser.uid,
                     viewedAt: serverTimestamp()
-                });
-                observer.unobserve(entry.target);
+                }).catch(console.error);
             }
         },
         {
@@ -382,8 +387,13 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-            {post.spotifyTrackId && (
-                <SpotifyPlayer trackId={post.spotifyTrackId} />
+            {post.musicPreviewUrl && (
+                <MusicPlayer 
+                  trackName={post.musicName}
+                  artistName={post.musicArtist}
+                  previewUrl={post.musicPreviewUrl}
+                  shouldPlay={isIntersecting}
+                />
             )}
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">

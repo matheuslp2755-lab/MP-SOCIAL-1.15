@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -109,6 +110,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 postData.musicName = selectedMusic.name;
                 postData.musicArtist = selectedMusic.artists[0]?.name || 'Unknown Artist';
                 postData.spotifyTrackId = selectedMusic.id;
+                postData.musicPreviewUrl = selectedMusic.preview_url;
             }
 
             await addDoc(collection(db, 'posts'), postData);

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 
 const PlayIcon = ({ className = "w-6 h-6" }) => <svg className={className} fill="currentColor" viewBox="0 0 20 20"><path d="M4.018 14.382A1 1 0 013 13.5V6.5a1 1 0 011.528-.854l6.5 3.5a1 1 0 010 1.708l-6.5 3.5a1 1 0 01-.51.128z"></path></svg>;
@@ -8,60 +9,71 @@ interface MusicPlayerProps {
   trackName?: string;
   artistName?: string;
   previewUrl: string;
+  shouldPlay?: boolean;
   isPulseVersion?: boolean;
 }
 
-const MusicPlayer: React.FC<MusicPlayerProps> = ({ trackName, artistName, previewUrl, isPulseVersion = false }) => {
+const MusicPlayer: React.FC<MusicPlayerProps> = ({ trackName, artistName, previewUrl, shouldPlay = false, isPulseVersion = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (isPulseVersion && audio) {
-        audio.play().catch(e => console.log("Autoplay was prevented.", e));
-        setIsPlaying(true);
-
-        const onEnded = () => setIsPlaying(false);
-        audio.addEventListener('ended', onEnded);
-        
-        return () => {
-            audio.pause();
-            audio.removeEventListener('ended', onEnded);
-        };
-    }
-  }, [isPulseVersion, previewUrl]);
-
+  // Control playback from parent component
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onEnded = () => setIsPlaying(false);
-    audio.addEventListener('ended', onEnded);
-    return () => {
-        audio.pause();
-        audio.removeEventListener('ended', onEnded);
+    if (shouldPlay) {
+      audio.play().catch(e => console.log("Autoplay was prevented.", e));
+    } else {
+      audio.pause();
     }
-  }, [previewUrl]);
+  }, [shouldPlay]);
+  
+  // Sync internal state with audio element state
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handlePause);
+    
+    // Initial state check for autoplaying pulses
+    if (isPulseVersion && !audio.paused) {
+        setIsPlaying(true);
+    } else if (isPulseVersion) {
+        audio.play().catch(e => console.log("Pulse autoplay was prevented.", e));
+    }
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handlePause);
+    };
+  }, [isPulseVersion, previewUrl]);
+
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.pause();
+    if (audio.paused) {
+      audio.play().catch(e => console.log("Play was prevented.", e));
     } else {
-      audio.play();
+      audio.pause();
     }
-    setIsPlaying(!isPlaying);
   };
 
   const containerClasses = isPulseVersion
     ? "bg-black/50 text-white rounded-lg p-2 flex items-center gap-3 backdrop-blur-sm"
-    : "bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 flex items-center gap-3 mb-2";
+    : "bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 flex items-center gap-3 my-2";
 
   return (
     <div className={containerClasses}>
-      <audio ref={audioRef} src={previewUrl} preload="metadata"></audio>
+      <audio ref={audioRef} src={previewUrl} preload="metadata" loop={isPulseVersion}></audio>
       <button 
         onClick={togglePlay} 
         className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors ${

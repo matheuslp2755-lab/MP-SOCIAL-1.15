@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -27,6 +28,7 @@ type PostType = {
     timestamp: { seconds: number; nanoseconds: number };
     musicName?: string;
     musicArtist?: string;
+    spotifyTrackId?: string;
     musicPreviewUrl?: string;
 };
 

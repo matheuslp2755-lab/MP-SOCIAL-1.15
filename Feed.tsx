@@ -29,6 +29,7 @@ type PostType = {
     musicName?: string;
     musicArtist?: string;
     spotifyTrackId?: string;
+    musicPreviewUrl?: string;
 };
 
 type PulseType = {
@@ -39,7 +40,7 @@ type PulseType = {
     authorId: string;
     musicName?: string;
     musicArtist?: string;
-    spotifyTrackId?: string;
+    musicPreviewUrl?: string;
 };
 
 type UserWithPulses = {

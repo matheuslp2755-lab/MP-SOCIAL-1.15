@@ -1,7 +1,6 @@
 [build]
-  base = "app"           # se sua pasta principal for "app"
   command = "npm run build"
-  publish = "app/dist"   # ou "app/build" se usar React padrão
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "18"

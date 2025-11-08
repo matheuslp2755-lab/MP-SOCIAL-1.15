@@ -9,7 +9,7 @@ export interface SpotifyTrack {
 }
 
 const clientId = 'ca3aed6612574a49b0516e7e5ecce076';
-const redirectUri = "https://voluble-twilight-eeef69.netlify.app/";
+const redirectUri = "https://mp-social-1-15.vercel.app/";
 
 // --- PKCE Helper Functions ---
 function generateCodeVerifier(length: number): string {

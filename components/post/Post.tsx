@@ -37,10 +37,6 @@ const CommentIcon: React.FC<{className?: string, title: string}> = ({ className,
     <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></path></svg>
 );
 
-const ShareIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
-  <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
-);
-
 const MoreIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
     <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><circle cx="12" cy="12" r="1.5"></circle><circle cx="6" cy="12" r="1.5"></circle><circle cx="18" cy="12" r="1.5"></circle></svg>
 );
@@ -379,9 +375,6 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                 </button>
                 <button>
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
-                </button>
-                <button>
-                    <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
 

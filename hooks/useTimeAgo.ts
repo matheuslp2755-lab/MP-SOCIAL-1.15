@@ -17,7 +17,7 @@ export const useTimeAgo = () => {
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return t('time.days', { count: diffInDays });
     
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('pt-BR');
   };
 
   return { formatTimestamp };

@@ -57,7 +57,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
         // onClose will be called by parent on success
     } catch (err) {
         console.error(err);
-        setError("Failed to update profile. Please try again.");
+        setError(t('editProfile.updateError'));
     }
   };
 

@@ -3,7 +3,9 @@
     "online": "Online",
     "cancel": "Cancel",
     "delete": "Delete",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "you": "You",
+    "user": "User"
   },
   "login": {
     "title": "MP SOCIAL",
@@ -109,7 +111,8 @@
     "privateAccount": "Private Account",
     "privateAccountInfo": "Only your followers will be able to see your photos and videos.",
     "submit": "Submit",
-    "submitting": "Submitting..."
+    "submitting": "Submitting...",
+    "updateError": "Failed to update profile. Please try again."
   },
   "createPost": {
     "title": "Create new post",

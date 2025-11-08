@@ -3,7 +3,9 @@
     "online": "Online",
     "cancel": "Cancelar",
     "delete": "Excluir",
-    "deleting": "Excluindo..."
+    "deleting": "Excluindo...",
+    "you": "Você",
+    "user": "Usuário"
   },
   "login": {
     "title": "MP SOCIAL",
@@ -109,7 +111,8 @@
     "privateAccount": "Conta Privada",
     "privateAccountInfo": "Apenas seus seguidores poderão ver suas fotos e vídeos.",
     "submit": "Enviar",
-    "submitting": "Enviando..."
+    "submitting": "Enviando...",
+    "updateError": "Falha ao atualizar o perfil. Por favor, tente novamente."
   },
   "createPost": {
     "title": "Criar nova publicação",

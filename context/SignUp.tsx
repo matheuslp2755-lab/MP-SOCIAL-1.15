@@ -17,7 +17,7 @@ const AppStoreButton: React.FC = () => {
     const { t } = useLanguage();
     return (
         <a href="#" className="inline-block">
-            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_ios_english-en.png/180ae7a0bcf7.png" alt={t('login.appStoreAlt')} className="h-10"/>
+            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_ios_portuguese-pt.png/43411c5d0645.png" alt={t('login.appStoreAlt')} className="h-10"/>
         </a>
     );
 };
@@ -26,7 +26,7 @@ const GooglePlayButton: React.FC = () => {
     const { t } = useLanguage();
     return (
         <a href="#" className="inline-block">
-            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_android_english-en.png/e9cd846dc748.png" alt={t('login.googlePlayAlt')} className="h-10"/>
+            <img src="https://www.instagram.com/static/images/appstore-install-badges/badge_android_portuguese-pt.png/13c858b448a4.png" alt={t('login.googlePlayAlt')} className="h-10"/>
         </a>
     );
 };

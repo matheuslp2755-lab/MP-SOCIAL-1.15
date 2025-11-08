@@ -225,8 +225,8 @@ const Feed: React.FC = () => {
         await deleteDoc(pulseRef);
         await deleteObject(mediaRef);
         
-        // FIX: Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
-        setViewingUserWithPulses((prev: UserWithPulses | null) => {
+        // Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
+        setViewingUserWithPulses((prev) => {
             if (!prev) return null;
             const updatedPulses = prev.pulses.filter(p => p.id !== pulseToDelete.id);
             if (updatedPulses.length === 0) return null;

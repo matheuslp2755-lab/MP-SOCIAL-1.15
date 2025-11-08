@@ -180,7 +180,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                     const otherUserInfo = data.participantInfo[otherUserId];
                     setOtherUser({
                         id: otherUserId,
-                        username: otherUserInfo?.username || 'User',
+                        username: otherUserInfo?.username || t('common.user'),
                         avatar: otherUserInfo?.avatar || `https://i.pravatar.cc/150?u=${otherUserId}`,
                     });
 
@@ -321,8 +321,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
                     messageId: tempReplyingTo.id,
                     senderId: tempReplyingTo.senderId,
                     senderUsername: tempReplyingTo.senderId === currentUser.uid 
-                        ? (currentUser.displayName || 'You')
-                        : (otherUser.username || 'User'),
+                        ? (currentUser.displayName || t('common.you'))
+                        : (otherUser?.username || t('common.user')),
                     text: tempReplyingTo.text,
                 };
             }

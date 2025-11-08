@@ -3,6 +3,9 @@ export interface SpotifyTrack {
     name: string;
     artists: { name: string }[];
     preview_url: string | null;
+    album: {
+        images: { url: string }[];
+    };
 }
 
 const clientId = 'ca3aed6612574a49b0516e7e5ecce076';

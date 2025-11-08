@@ -79,6 +79,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
 
     const handleSelectMusic = (track: SpotifyTrack) => {
         setSelectedMusic(track);
+        setShowMusicSearch(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -164,7 +165,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists[0]?.name}</p>
                                             </div>
                                         </div>
-                                        <button type="button" onClick={() => {setSelectedMusic(null); setShowMusicSearch(false);}} className="font-bold text-lg px-2">&times;</button>
+                                        <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2">&times;</button>
                                     </div>
                                 ) : (
                                     <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1">

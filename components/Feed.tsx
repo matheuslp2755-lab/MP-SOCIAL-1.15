@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -5,7 +7,7 @@ import Post from './feed/Post';
 import CreatePostModal from './post/CreatePostModal';
 import CreatePulseModal from './pulse/CreatePulseModal';
 import MessagesModal from './messages/MessagesModal';
-import PulseBar from './feed/PulseBar';
+import PulseBar from './messages/PulseBar';
 import PulseViewerModal from './pulse/PulseViewerModal';
 import { auth, db, collection, query, where, getDocs, doc, getDoc, deleteDoc, storage, storageRef, deleteObject } from '../firebase';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,6 +25,9 @@ type PostType = {
     caption: string;
     likes: string[]; // array of userIds
     timestamp: { seconds: number; nanoseconds: number };
+    musicName?: string;
+    musicArtist?: string;
+    musicPreviewUrl?: string;
 };
 
 type PulseType = {
@@ -31,6 +36,9 @@ type PulseType = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
+    musicName?: string;
+    musicArtist?: string;
+    musicPreviewUrl?: string;
 };
 
 type UserWithPulses = {

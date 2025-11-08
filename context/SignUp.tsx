@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db, setDoc, doc, storage, storageRef, uploadBytes, getDownloadURL, serverTimestamp } from '../firebase';
-import TextInput from '../components/common/TextInput';
+import TextInput from '../locales/TextInput';
 import Button from '../components/common/Button';
 import { useLanguage } from './LanguageContext';
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import {
@@ -60,6 +61,9 @@ type Post = {
     imageUrl: string;
     caption: string;
     timestamp: { seconds: number; nanoseconds: number };
+    musicName?: string;
+    musicArtist?: string;
+    musicPreviewUrl?: string;
 };
 
 type Pulse = {
@@ -68,6 +72,9 @@ type Pulse = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
+    musicName?: string;
+    musicArtist?: string;
+    musicPreviewUrl?: string;
 };
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {
@@ -535,7 +542,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             <PulseViewerModal
                 pulses={pulses}
                 initialPulseIndex={pulses.findIndex(p => p.id === viewingPulse.id)}
-                authorInfo={{ username: user.username, avatar: user.avatar }}
+                authorInfo={{ username: user.username, avatar: user.avatar, id: userId }}
                 onClose={() => setViewingPulse(null)}
                 onDelete={(pulseToDelete) => {
                     if (pulses.length === 1) {

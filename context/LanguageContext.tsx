@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext } from 'react';
 
 // The content of locales/pt.json is embedded here to fix module loading issues.
@@ -80,7 +81,11 @@ const messages = {
     "deleteCommentBody": "Tem certeza que deseja excluir este comentário?",
     "deletePostTitle": "Excluir Publicação?",
     "deletePostBody": "Tem certeza que deseja excluir esta publicação?",
-    "deleting": "Excluindo..."
+    "deleting": "Excluindo...",
+    "viewSingular": "visualização",
+    "viewPlural": "visualizações",
+    "viewedBy": "Visto por",
+    "noViews": "Nenhuma visualização ainda."
   },
   "time": {
     "seconds": "há {count}s",
@@ -123,7 +128,16 @@ const messages = {
     "sharing": "Compartilhando...",
     "captionLabel": "Escreva uma legenda...",
     "dragPhotos": "Arraste as fotos aqui",
-    "selectFromComputer": "Selecionar do computador"
+    "selectFromComputer": "Selecionar do computador",
+    "addMusic": "Adicionar música"
+  },
+  "musicSearch": {
+    "placeholder": "Buscar uma música...",
+    "searching": "Buscando...",
+    "noResults": "Nenhum resultado encontrado.",
+    "apiError": "Não foi possível carregar músicas agora.",
+    "connectSpotifyMessage": "Para buscar músicas, conecte-se ao Spotify.",
+    "connectSpotifyButton": "Conectar com Spotify"
   },
   "messages": {
     "title": "Mensagens",
@@ -164,14 +178,19 @@ const messages = {
     "selectMedia": "Selecione uma imagem ou vídeo",
     "selectFromComputer": "Selecionar do computador",
     "invalidFileError": "Por favor, selecione um arquivo de imagem ou vídeo válido.",
-    "publishError": "Falha ao criar o pulso. Por favor, tente novamente."
+    "publishError": "Falha ao criar o pulso. Por favor, tente novamente.",
+    "addMusic": "Adicionar música"
   },
   "pulseViewer": {
     "previous": "Pulso anterior",
     "next": "Próximo pulso",
     "delete": "Excluir Pulso",
     "deleteTitle": "Excluir Pulso?",
-    "deleteBody": "Tem certeza que deseja excluir este pulso? Esta ação não pode ser desfeita."
+    "deleteBody": "Tem certeza que deseja excluir este pulso? Esta ação não pode ser desfeita.",
+    "viewedBy": "Visto por",
+    "noViews": "Nenhuma visualização ainda.",
+    "viewSingular": "visualização",
+    "viewPlural": "visualizações"
   },
   "pulseBar": {
     "viewPulse": "Ver o pulso de {username}"

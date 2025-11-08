@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
-import PostViewsModal from '../post/PostViewsModal';
-import MusicPlayer from '../common/MusicPlayer';
+import PostViewsModal from './PostViewsModal';
 
 type PostType = {
     id: string;
@@ -15,9 +13,6 @@ type PostType = {
     caption: string;
     likes: string[];
     timestamp: { seconds: number; nanoseconds: number };
-    musicName?: string;
-    musicArtist?: string;
-    musicPreviewUrl?: string;
 };
 
 type CommentType = {
@@ -96,7 +91,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     return () => unsubscribe();
   }, [post.id]);
-  
+
   useEffect(() => {
     if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
         return;
@@ -136,7 +131,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     return () => unsubscribe();
   }, [post.id]);
-
+  
   const handleLikeToggle = async () => {
     if (!currentUser) return;
     
@@ -389,13 +384,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-            {post.musicPreviewUrl && (
-                <MusicPlayer 
-                    trackName={post.musicName}
-                    artistName={post.musicArtist}
-                    previewUrl={post.musicPreviewUrl}
-                />
-            )}
+
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">
                     <span>{likesCount.toLocaleString()} {t('post.likes')}</span>

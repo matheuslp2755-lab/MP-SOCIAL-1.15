@@ -6,6 +6,7 @@ import SignUp from './context/SignUp';
 import Feed from './components/Feed';
 import { LanguageProvider } from './context/LanguageContext';
 import WelcomeAnimation from './components/common/WelcomeAnimation';
+import { exchangeCodeForToken } from './components/common/spotifyApi';
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -28,6 +29,23 @@ const AppContent: React.FC = () => {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+
+    if (error) {
+        console.error("Erro de autenticação do Spotify:", error);
+        window.history.pushState({}, '', '/'); // Limpa a URL
+    } else if (code) {
+        exchangeCodeForToken(code).then(() => {
+            const redirectPath = localStorage.getItem("spotify_auth_redirect_path") || '/';
+            localStorage.removeItem("spotify_auth_redirect_path");
+            window.history.pushState({}, '', redirectPath); // Limpa a URL e restaura o caminho
+        });
+    }
   }, []);
 
   useEffect(() => {

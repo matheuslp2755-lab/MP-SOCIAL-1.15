@@ -43,7 +43,7 @@ export async function redirectToAuth() {
     params.append("client_id", clientId);
     params.append("response_type", "code");
     params.append("redirect_uri", redirectUri);
-    params.append("scope", "user-read-private user-read-email");
+    params.append("scope", "user-read-private user-read-email offline_access");
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
 
@@ -87,102 +87,104 @@ export async function exchangeCodeForToken(code: string) {
         localStorage.removeItem("spotify_code_verifier");
 
     } catch (error) {
-        console.error("Error getting Spotify token:", error);
+        console.error("Error exchanging code for token:", error);
     }
 }
 
-// --- Token Management ---
-async function refreshToken(): Promise<string | null> {
-    const refreshToken = localStorage.getItem('spotify_refresh_token');
+/**
+ * Step 3: Refresh the access token using the refresh token.
+ */
+async function refreshAccessToken(): Promise<string | null> {
+    const refreshToken = localStorage.getItem("spotify_refresh_token");
     if (!refreshToken) {
+        console.log("No refresh token available.");
         return null;
     }
 
     const params = new URLSearchParams();
+    params.append("client_id", clientId);
     params.append("grant_type", "refresh_token");
     params.append("refresh_token", refreshToken);
-    params.append("client_id", clientId);
-    
+
     try {
         const result = await fetch("https://accounts.spotify.com/api/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params
+            body: params,
         });
 
-        if (!result.ok) throw new Error("Failed to refresh token");
+        if (!result.ok) {
+            // If refresh fails, clear tokens to force re-authentication
+            localStorage.removeItem("spotify_access_token");
+            localStorage.removeItem("spotify_refresh_token");
+            localStorage.removeItem("spotify_token_expires_at");
+            throw new Error("Failed to refresh access token");
+        }
 
-        const { access_token, expires_in, refresh_token: new_refresh_token } = await result.json();
+        const { access_token, expires_in, refresh_token } = await result.json();
         localStorage.setItem("spotify_access_token", access_token);
         localStorage.setItem("spotify_token_expires_at", (Date.now() + expires_in * 1000).toString());
-        if (new_refresh_token) {
-            localStorage.setItem("spotify_refresh_token", new_refresh_token);
+        // Spotify might issue a new refresh token
+        if (refresh_token) {
+            localStorage.setItem("spotify_refresh_token", refresh_token);
         }
         return access_token;
+
     } catch (error) {
-        console.error("Error refreshing token:", error);
-        localStorage.removeItem("spotify_access_token");
-        localStorage.removeItem("spotify_refresh_token");
-        localStorage.removeItem("spotify_token_expires_at");
+        console.error("Error refreshing access token:", error);
         return null;
     }
 }
 
-async function getValidAccessToken(): Promise<string | null> {
-    const expiresAt = localStorage.getItem('spotify_token_expires_at');
-    const accessToken = localStorage.getItem('spotify_access_token');
-    
-    if (accessToken && expiresAt && Date.now() < parseInt(expiresAt)) {
-        return accessToken;
+/**
+ * Gets a valid access token, refreshing it if necessary.
+ */
+async function getAccessToken(): Promise<string | null> {
+    const expiresAt = localStorage.getItem("spotify_token_expires_at");
+    const accessToken = localStorage.getItem("spotify_access_token");
+
+    if (!accessToken || !expiresAt) {
+        return null; // No token available
     }
 
-    return await refreshToken();
+    // Check if token is expired or will expire in the next minute
+    if (Date.now() > parseInt(expiresAt) - 60000) {
+        return await refreshAccessToken();
+    }
+    
+    return accessToken;
 }
 
-// --- API Call ---
-export const searchSpotifyTracks = async (query: string): Promise<SpotifyTrack[]> => {
-    if (!query.trim()) return [];
+/**
+ * Searches for tracks on Spotify.
+ */
+export async function searchSpotifyTracks(query: string): Promise<SpotifyTrack[]> {
+    const accessToken = await getAccessToken();
 
-    let token = await getValidAccessToken();
-    if (!token) {
-        throw new Error("SPOTIFY_AUTH_REQUIRED");
+    if (!accessToken) {
+        // This custom error message can be caught to trigger the auth flow
+        throw new Error('SPOTIFY_AUTH_REQUIRED');
     }
-    
-    try {
-        const response = await fetch(
-            `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            }
-        );
-    
-        if (!response.ok) {
-            if (response.status === 401) {
-                token = await refreshToken();
-                if (!token) throw new Error("SPOTIFY_AUTH_REQUIRED");
-                
-                const retryResponse = await fetch(
-                    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                );
-                if (!retryResponse.ok) throw new Error(`Spotify search failed on retry: ${await retryResponse.text()}`);
-                const retryData = await retryResponse.json();
-                return (retryData.tracks?.items || []).filter((track: SpotifyTrack) => track.preview_url);
-            }
-            throw new Error(`Spotify search failed: ${await response.text()}`);
-        }
-    
-        const data = await response.json();
-        const items = data.tracks?.items || [];
-        return items.filter((track: SpotifyTrack) => track.preview_url);
 
-    } catch (error) {
-        console.error("Error searching Spotify:", error);
-        if ((error as Error).message === "SPOTIFY_AUTH_REQUIRED") {
-            throw error;
+    const params = new URLSearchParams();
+    params.append("q", query);
+    params.append("type", "track");
+    params.append("limit", "10");
+
+    const response = await fetch(`https://api.spotify.com/v1/search?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`
         }
-        throw new Error("Failed to search Spotify.");
+    });
+
+    if (!response.ok) {
+        if (response.status === 401) { // Unauthorized
+            localStorage.removeItem("spotify_access_token"); // Token might be invalid
+            throw new Error('SPOTIFY_AUTH_REQUIRED');
+        }
+        throw new Error(`Spotify API error: ${response.statusText}`);
     }
-};
+
+    const data = await response.json();
+    return data.tracks.items;
+}

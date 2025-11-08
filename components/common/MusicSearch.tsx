@@ -86,8 +86,12 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose }) => 
                 {!authRequired && !loading && !error && results.map(track => (
                     <div
                         key={track.id}
-                        onClick={() => onSelectMusic(track)}
-                        className="p-2 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md cursor-pointer"
+                        onClick={track.preview_url ? () => onSelectMusic(track) : undefined}
+                        className={`p-2 flex items-center gap-3 rounded-md ${
+                            track.preview_url
+                            ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
+                            : 'opacity-50 cursor-not-allowed'
+                        }`}
                     >
                         <div className="flex-grow overflow-hidden">
                             <p className="font-semibold text-sm truncate">{track.name}</p>

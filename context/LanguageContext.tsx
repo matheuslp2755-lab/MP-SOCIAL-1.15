@@ -1,4 +1,205 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
+
+// The content of locales/pt.json is embedded here to fix module loading issues.
+const messages = {
+  "common": {
+    "online": "Online",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "deleting": "Excluindo...",
+    "you": "Você",
+    "user": "Usuário"
+  },
+  "login": {
+    "title": "Mundo MP",
+    "emailLabel": "Endereço de e-mail",
+    "passwordLabel": "Senha",
+    "loginButton": "Entrar",
+    "loggingInButton": "Entrando...",
+    "forgotPassword": "Esqueceu a senha?",
+    "noAccount": "Não tem uma conta?",
+    "signUpLink": "Cadastre-se",
+    "getTheApp": "Obtenha o aplicativo.",
+    "error": "Falha ao entrar. Verifique seu e-mail e senha.",
+    "appStoreAlt": "Baixar na App Store",
+    "googlePlayAlt": "Disponível no Google Play"
+  },
+  "signup": {
+    "title": "Mundo MP",
+    "subtitle": "Cadastre-se para ver fotos e vídeos dos seus amigos.",
+    "emailLabel": "Endereço de e-mail",
+    "usernameLabel": "Nome de usuário",
+    "passwordLabel": "Senha",
+    "signUpButton": "Cadastre-se",
+    "signingUpButton": "Cadastrando...",
+    "haveAccount": "Tem uma conta?",
+    "logInLink": "Entrar",
+    "getTheApp": "Obtenha o aplicativo.",
+    "emailInUseError": "Este e-mail já está em uso.",
+    "genericError": "Falha ao criar uma conta. Por favor, tente novamente."
+  },
+  "header": {
+    "title": "Mundo MP",
+    "searchPlaceholder": "Pesquisar",
+    "noResults": "Nenhum resultado encontrado.",
+    "following": "Seguindo",
+    "follow": "Seguir",
+    "requested": "Solicitado",
+    "notifications": "Notificações",
+    "noActivity": "Nenhuma atividade nova.",
+    "profile": "Perfil",
+    "createPost": "Criar Publicação",
+    "logOut": "Sair",
+    "cancel": "Cancelar",
+    "messages": "Direct",
+    "followNotification": "{username} começou a seguir você.",
+    "messageNotification": "{username} te enviou uma mensagem.",
+    "followRequestNotification": "{username} quer seguir você.",
+    "mentionCommentNotification": "{username} mencionou você em um comentário: \"{commentText}\"",
+    "accept": "Aceitar",
+    "decline": "Recusar"
+  },
+  "feed": {
+    "welcome": "Bem-vindo ao Mundo MP",
+    "empty": "Parece que seu feed está vazio.",
+    "emptySuggestion": "Use a barra de pesquisa para encontrar e seguir seus amigos para ver as fotos e vídeos deles."
+  },
+  "post": {
+    "like": "Curtir",
+    "comment": "Comentar",
+    "share": "Compartilhar Publicação",
+    "moreOptions": "Mais opções",
+    "delete": "Excluir",
+    "likes": "curtidas",
+    "viewAllComments": "Ver todos os {count} comentários",
+    "addComment": "Adicione um comentário...",
+    "postButton": "Publicar",
+    "mentionSearching": "Procurando...",
+    "mentionNoUsers": "Nenhum usuário encontrado.",
+    "deleteCommentTitle": "Excluir Comentário?",
+    "deleteCommentBody": "Tem certeza que deseja excluir este comentário?",
+    "deletePostTitle": "Excluir Publicação?",
+    "deletePostBody": "Tem certeza que deseja excluir esta publicação?",
+    "deleting": "Excluindo..."
+  },
+  "time": {
+    "seconds": "há {count}s",
+    "minutes": "há {count}m",
+    "hours": "há {count}h",
+    "days": "há {count}d"
+  },
+  "profile": {
+    "editProfile": "Editar Perfil",
+    "following": "Seguindo",
+    "follow": "Seguir",
+    "message": "Mensagem",
+    "posts": "publicações",
+    "followers": "seguidores",
+    "followingCount": "seguindo",
+    "postsTab": "PUBLICAÇÕES",
+    "pulsesTab": "PULSOS",
+    "noPosts": "Nenhuma Publicação Ainda",
+    "noPostsSuggestion": "Quando este usuário compartilhar fotos, você as verá aqui.",
+    "noPulses": "Nenhum Pulso Ainda",
+    "noPulsesSuggestion": "Este usuário não compartilhou nenhum pulso.",
+    "privateAccountMessage": "Esta Conta é Privada",
+    "privateAccountSuggestion": "Siga para ver as fotos e vídeos.",
+    "notFound": "Usuário não encontrado."
+  },
+  "editProfile": {
+    "title": "Editar Perfil",
+    "changePhoto": "Alterar foto do perfil",
+    "usernameLabel": "Nome de usuário",
+    "bioLabel": "Biografia",
+    "privateAccount": "Conta Privada",
+    "privateAccountInfo": "Apenas seus seguidores poderão ver suas fotos e vídeos.",
+    "submit": "Enviar",
+    "submitting": "Enviando...",
+    "updateError": "Falha ao atualizar o perfil. Por favor, tente novamente."
+  },
+  "createPost": {
+    "title": "Criar nova publicação",
+    "share": "Compartilhar",
+    "sharing": "Compartilhando...",
+    "captionLabel": "Escreva uma legenda...",
+    "dragPhotos": "Arraste as fotos aqui",
+    "selectFromComputer": "Selecionar do computador"
+  },
+  "messages": {
+    "title": "Mensagens",
+    "newMessage": "Nova mensagem",
+    "close": "Fechar mensagens",
+    "loading": "Carregando conversas...",
+    "noConversations": "Nenhuma conversa ainda.",
+    "back": "Voltar para as conversas",
+    "yourMessages": "Suas Mensagens",
+    "sendPrivate": "Envie fotos e mensagens privadas para um amigo.",
+    "seen": "Visto",
+    "replyingToSelf": "Respondendo a si mesmo",
+    "replyingToOther": "Respondendo a {username}",
+    "messagePlaceholder": "Mensagem...",
+    "send": "Enviar",
+    "deleteTitle": "Excluir Mensagem?",
+    "deleteBody": "Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
+    "newMessageTitle": "Nova Mensagem",
+    "searchUsers": "Procurar usuários..."
+  },
+  "crystal": {
+    "formed": "💎 Um novo Cristal de Conexão foi formado!",
+    "glowing": "💎 Sua conexão está brilhando!",
+    "level": {
+      "brilhante": "Brilhante",
+      "equilibrado": "Equilibrado",
+      "apagado": "Apagado",
+      "rachado": "Rachado"
+    },
+    "title": "Cristal de Conexão: {status}",
+    "streak": "{streak} dias de interação seguida"
+  },
+  "createPulse": {
+    "title": "Criar novo pulso",
+    "publishing": "Publicando...",
+    "publish": "Publicar Pulso",
+    "captionLabel": "Escreva uma legenda... (opcional)",
+    "selectMedia": "Selecione uma imagem ou vídeo",
+    "selectFromComputer": "Selecionar do computador",
+    "invalidFileError": "Por favor, selecione um arquivo de imagem ou vídeo válido.",
+    "publishError": "Falha ao criar o pulso. Por favor, tente novamente."
+  },
+  "pulseViewer": {
+    "previous": "Pulso anterior",
+    "next": "Próximo pulso",
+    "delete": "Excluir Pulso",
+    "deleteTitle": "Excluir Pulso?",
+    "deleteBody": "Tem certeza que deseja excluir este pulso? Esta ação não pode ser desfeita."
+  },
+  "pulseBar": {
+    "viewPulse": "Ver o pulso de {username}"
+  },
+  "welcome": {
+    "title": "Bem vindo ao Mundo MP 1.15"
+  },
+  "footer": {
+    "language": "Português (Brasil)",
+    "copyright": "© {year} Mundo MP da Meta",
+    "links": {
+      "meta": "Meta",
+      "about": "Sobre",
+      "blog": "Blog",
+      "jobs": "Carreiras",
+      "help": "Ajuda",
+      "api": "API",
+      "privacy": "Privacidade",
+      "terms": "Termos",
+      "locations": "Localizações",
+      "lite": "Instagram Lite",
+      "threads": "Threads",
+      "contact": "Carregamento de contatos e não usuários",
+      "verified": "Meta Verified"
+    }
+  }
+};
+
 
 // Set 'pt-BR' as the language.
 type Language = 'pt-BR';
@@ -16,34 +217,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Hardcode the language to Brazilian Portuguese.
   const language: Language = 'pt-BR';
-  const [messages, setMessages] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
 
   // This function does nothing, as the language is fixed.
   const setLanguage = (lang: Language) => {};
 
-  useEffect(() => {
-    const loadTranslations = async () => {
-      setLoading(true);
-      try {
-        // Load the Portuguese translation file. The filename remains pt.json.
-        const response = await fetch(`/locales/pt.json`);
-        if (!response.ok) throw new Error('Failed to load translations');
-        const newMessages = await response.json();
-        setMessages(newMessages);
-      } catch (error) {
-        console.error(`Could not load translation file for pt.`, error);
-        setMessages({});
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTranslations();
-  }, []); // The effect runs only once on mount.
-
   const t = (key: string, replacements?: { [key:string]: string | number }): string => {
-    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages) || key;
+    let message = key.split('.').reduce((o, i) => (o ? o[i] : undefined), messages as Record<string, any>) || key;
     if (replacements && typeof message === 'string') {
       Object.keys(replacements).forEach(placeholder => {
         message = message.replace(`{${placeholder}}`, String(replacements[placeholder]));
@@ -53,12 +232,9 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, loading }}>
-      {loading ? (
-        <div className="bg-zinc-50 dark:bg-black min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
-        </div>
-      ) : children}
+    // Loading state is no longer needed as the import is synchronous.
+    <LanguageContext.Provider value={{ language, setLanguage, t, loading: false }}>
+      {children}
     </LanguageContext.Provider>
   );
 };

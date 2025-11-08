@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
@@ -20,6 +21,8 @@ type PostType = {
     musicArtist?: string;
     spotifyTrackId?: string;
     musicPreviewUrl?: string;
+    isVenting?: boolean;
+    allowedViewers?: string[];
 };
 
 type CommentType = {
@@ -35,6 +38,12 @@ type UserSearchResult = {
     username: string;
     avatar: string;
 };
+
+const LockIcon: React.FC<{className?: string}> = ({className}) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+);
 
 const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> = ({ className, isLiked, title }) => (
   <svg aria-label={title} className={className} fill={isLiked ? '#ef4444' : 'currentColor'} height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-6.12 8.351C12.89 20.72 12.434 21 12 21s-.89-.28-1.38-.627C7.152 14.08 4.5 12.192 4.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.118-1.763a4.21 4.21 0 0 1 3.675-1.941Z"></path></svg>
@@ -351,7 +360,12 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
         <article ref={postRef} className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
         <div className="flex items-center p-3">
             <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover" />
-            <span className="font-semibold text-sm ml-3">{post.username}</span>
+            <div className="flex items-center ml-3">
+                <span className="font-semibold text-sm">{post.username}</span>
+                {post.isVenting && post.userId === currentUser?.uid && (
+                    <LockIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400 ml-2" />
+                )}
+            </div>
             {currentUser?.uid === post.userId && (
                  <div className="ml-auto relative">
                     <button onClick={() => setIsOptionsOpen(prev => !prev)}>

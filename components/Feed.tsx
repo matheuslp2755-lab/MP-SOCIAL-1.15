@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -31,6 +33,8 @@ type PostType = {
     musicArtist?: string;
     spotifyTrackId?: string;
     musicPreviewUrl?: string;
+    isVenting?: boolean;
+    allowedViewers?: string[];
 };
 
 type PulseType = {
@@ -44,6 +48,8 @@ type PulseType = {
         artista: string;
         preview: string;
     };
+    isVenting?: boolean;
+    allowedViewers?: string[];
 };
 
 type UserWithPulses = {
@@ -98,67 +104,63 @@ const Feed: React.FC = () => {
         setFeedLoading(true);
         try {
             if (!auth.currentUser) return;
+            const currentUserId = auth.currentUser.uid;
 
-            const followingRef = collection(db, 'users', auth.currentUser.uid, 'following');
+            const followingRef = collection(db, 'users', currentUserId, 'following');
             const followingSnap = await getDocs(followingRef);
             const followingIds = followingSnap.docs.map(doc => doc.id);
-            const userIdsToQuery = [auth.currentUser.uid, ...followingIds];
-            
-            // 1. Fetch Posts
-            if (userIdsToQuery.length > 0) {
-                const userIdChunks: string[][] = [];
-                for (let i = 0; i < userIdsToQuery.length; i += 30) {
-                    userIdChunks.push(userIdsToQuery.slice(i, i + 30));
-                }
+            const publicUserIds = [currentUserId, ...followingIds];
 
-                const allPosts: PostType[] = [];
-                for (const chunk of userIdChunks) {
-                    if (chunk.length === 0) continue;
-                    const postsQuery = query(collection(db, 'posts'), where('userId', 'in', chunk));
-                    const postsSnap = await getDocs(postsQuery);
-                    const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostType));
-                    allPosts.push(...posts);
+            // --- FETCH POSTS ---
+            const publicPostsPromises = [];
+            for (let i = 0; i < publicUserIds.length; i += 30) {
+                const chunk = publicUserIds.slice(i, i + 30);
+                if (chunk.length > 0) {
+                    const q = query(collection(db, 'posts'), where('userId', 'in', chunk), where('isVenting', '==', false));
+                    publicPostsPromises.push(getDocs(q));
                 }
-                
-                allPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                setFeedPosts(allPosts.slice(0, 20));
-            } else {
-                setFeedPosts([]);
             }
 
-            // 2. Fetch Pulses
-            const allPulses: PulseType[] = [];
-            if (userIdsToQuery.length > 0) {
-                // Firestore 'in' queries are limited to 30 elements. Chunk the user IDs to avoid errors.
-                const userIdChunks: string[][] = [];
-                for (let i = 0; i < userIdsToQuery.length; i += 30) {
-                    userIdChunks.push(userIdsToQuery.slice(i, i + 30));
-                }
+            const ventingPostsQuery = query(collection(db, 'posts'), where('allowedViewers', 'array-contains', currentUserId));
+            
+            const [publicPostsSnaps, ventingPostsSnap] = await Promise.all([
+                Promise.all(publicPostsPromises),
+                getDocs(ventingPostsQuery)
+            ]);
 
-                for (const chunk of userIdChunks) {
-                    if (chunk.length === 0) continue;
-                    // Query without the time filter to avoid the composite index requirement.
-                    // Filtering will be done on the client side.
-                    const pulsesQuery = query(
-                        collection(db, 'pulses'),
-                        where('authorId', 'in', chunk)
-                    );
-                    const pulsesSnap = await getDocs(pulsesQuery);
-                    const pulses = pulsesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PulseType));
-                    allPulses.push(...pulses);
+            const allPostsMap = new Map<string, PostType>();
+            publicPostsSnaps.forEach(snap => snap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as PostType)));
+            ventingPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as PostType));
+            const allPosts = Array.from(allPostsMap.values());
+            allPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+            setFeedPosts(allPosts);
+
+
+            // --- FETCH PULSES ---
+            const publicPulsesPromises = [];
+            for (let i = 0; i < publicUserIds.length; i += 30) {
+                const chunk = publicUserIds.slice(i, i + 30);
+                if (chunk.length > 0) {
+                    const q = query(collection(db, 'pulses'), where('authorId', 'in', chunk), where('isVenting', '==', false));
+                    publicPulsesPromises.push(getDocs(q));
                 }
             }
             
-            // Client-side filtering for pulses from the last 24 hours.
+            const ventingPulsesQuery = query(collection(db, 'pulses'), where('allowedViewers', 'array-contains', currentUserId));
+            
+            const [publicPulsesSnaps, ventingPulsesSnap] = await Promise.all([
+                Promise.all(publicPulsesPromises),
+                getDocs(ventingPulsesQuery)
+            ]);
+            
+            const allPulsesMap = new Map<string, PulseType>();
+            publicPulsesSnaps.forEach(snap => snap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as PulseType)));
+            ventingPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as PulseType));
+            
+            const allPulses = Array.from(allPulsesMap.values());
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            const recentPulses = allPulses.filter(pulse => {
-                if (!pulse.createdAt?.seconds) return false;
-                const pulseDate = new Date(pulse.createdAt.seconds * 1000);
-                return pulseDate >= twentyFourHoursAgo;
-            });
+            const recentPulses = allPulses.filter(pulse => new Date((pulse.createdAt?.seconds || 0) * 1000) >= twentyFourHoursAgo);
 
-
-            // Group pulses by author and collect unique author IDs
             const pulsesByAuthorId: { [key: string]: PulseType[] } = {};
             const authorIds = new Set<string>();
             recentPulses.forEach(pulse => {
@@ -167,7 +169,6 @@ const Feed: React.FC = () => {
                 authorIds.add(pulse.authorId);
             });
 
-            // Fetch author info
             const authorInfoMap = new Map<string, { username: string, avatar: string }>();
             if (authorIds.size > 0) {
                 for (const id of Array.from(authorIds)) {
@@ -179,7 +180,6 @@ const Feed: React.FC = () => {
                 }
             }
             
-            // Combine author info with grouped pulses
             const finalGroupedPulses = new Map<string, UserWithPulses>();
             for (const [authorId, pulses] of Object.entries(pulsesByAuthorId)) {
                 const author = authorInfoMap.get(authorId);

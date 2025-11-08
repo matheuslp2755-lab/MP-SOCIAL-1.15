@@ -142,7 +142,7 @@ async function refreshAccessToken(): Promise<string | null> {
 /**
  * Gets a valid access token, refreshing it if necessary.
  */
-async function getAccessToken(): Promise<string | null> {
+export async function getAccessToken(): Promise<string | null> {
     const expiresAt = localStorage.getItem("spotify_token_expires_at");
     const accessToken = localStorage.getItem("spotify_access_token");
 

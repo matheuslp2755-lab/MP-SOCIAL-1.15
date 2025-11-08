@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -20,7 +22,8 @@ import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
 import MusicSearch from '../common/MusicSearch';
-import { SpotifyTrack } from '../common/spotifyApi';
+import { SpotifyTrack, getAccessToken, redirectToAuth } from '../common/spotifyApi';
+import FollowerSelectionModal from '../common/FollowerSelectionModal';
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -43,6 +46,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const [error, setError] = useState('');
     const [selectedMusic, setSelectedMusic] = useState<SpotifyTrack | null>(null);
     const [showMusicSearch, setShowMusicSearch] = useState(false);
+    const [isSpotifyConnected, setIsSpotifyConnected] = useState<boolean | null>(null);
+    const [isVenting, setIsVenting] = useState(false);
+    const [allowedViewers, setAllowedViewers] = useState<string[]>([]);
+    const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useLanguage();
 
@@ -54,6 +61,19 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             setError('');
             setSelectedMusic(null);
             setShowMusicSearch(false);
+            setIsSpotifyConnected(null);
+            setIsVenting(false);
+            setAllowedViewers([]);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen) {
+            const checkSpotifyAuth = async () => {
+                const token = await getAccessToken();
+                setIsSpotifyConnected(!!token);
+            };
+            checkSpotifyAuth();
         }
     }, [isOpen]);
 
@@ -104,6 +124,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 caption,
                 likes: [],
                 timestamp: serverTimestamp(),
+                isVenting: isVenting,
             };
 
             if (selectedMusic) {
@@ -111,6 +132,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 postData.musicArtist = selectedMusic.artists[0]?.name || 'Unknown Artist';
                 postData.spotifyTrackId = selectedMusic.id;
                 postData.musicPreviewUrl = selectedMusic.preview_url;
+            }
+
+            if (isVenting) {
+                // Ensure the author can always see their own post.
+                const viewers = [...new Set([...allowedViewers, currentUser.uid])];
+                postData.allowedViewers = viewers;
             }
 
             await addDoc(collection(db, 'posts'), postData);
@@ -127,75 +154,125 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
 
 
     return (
-        <div 
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
-            onClick={onClose}
-        >
+        <>
             <div 
-                className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-lg border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh]"
-                onClick={e => e.stopPropagation()}
+                className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+                onClick={onClose}
             >
-                <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
-                    <h2 className="text-lg font-semibold">{t('createPost.title')}</h2>
-                    {imagePreview && (
-                         <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
-                            {t('createPost.share')}
-                        </Button>
-                    )}
-                </div>
-                <div className="flex-grow overflow-y-auto">
-                    {imagePreview ? (
-                        <div className="flex flex-col md:flex-row">
-                            <div className="w-full md:w-1/2 aspect-square">
-                                <img src={imagePreview} alt="Post preview" className="w-full h-full object-cover" />
-                            </div>
-                            <div className="w-full md:w-1/2 p-4">
-                                <div className="flex items-center mb-4">
-                                    <img src={auth.currentUser?.photoURL || ''} alt={auth.currentUser?.displayName || 'User'} className="w-8 h-8 rounded-full object-cover"/>
-                                    <p className="font-semibold text-sm ml-3">{auth.currentUser?.displayName}</p>
-                                </div>
-                                <TextAreaInput 
-                                    id="caption"
-                                    label={t('createPost.captionLabel')}
-                                    value={caption}
-                                    onChange={(e) => setCaption(e.target.value)}
-                                    className="!min-h-[150px]"
-                                />
-                                {selectedMusic ? (
-                                    <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md mt-2">
-                                        <div className="flex items-center gap-2 overflow-hidden">
-                                            <MusicIcon />
-                                            <div className="text-sm">
-                                                <p className="font-semibold truncate">{selectedMusic.name}</p>
-                                                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists[0]?.name}</p>
-                                            </div>
-                                        </div>
-                                        <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2">&times;</button>
-                                    </div>
-                                ) : (
-                                    <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1">
-                                        {t('createPost.addMusic')}
-                                    </button>
-                                )}
-                                {showMusicSearch && (
-                                    <MusicSearch onSelectMusic={handleSelectMusic} onClose={() => setShowMusicSearch(false)} />
-                                )}
-                                {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center p-16">
-                            <ImageUploadIcon />
-                            <h3 className="text-xl mt-4 mb-2">{t('createPost.dragPhotos')}</h3>
-                            <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/png, image/jpeg" />
-                            <Button onClick={triggerFileInput}>
-                                {t('createPost.selectFromComputer')}
+                <div 
+                    className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-lg border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh]"
+                    onClick={e => e.stopPropagation()}
+                >
+                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                        <h2 className="text-lg font-semibold">{t('createPost.title')}</h2>
+                        {imagePreview && (
+                            <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
+                                {t('createPost.share')}
                             </Button>
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    <div className="flex-grow overflow-y-auto">
+                        {imagePreview ? (
+                            <div className="flex flex-col md:flex-row">
+                                <div className="w-full md:w-1/2 aspect-square">
+                                    <img src={imagePreview} alt="Post preview" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="w-full md:w-1/2 p-4">
+                                    <div className="flex items-center mb-4">
+                                        <img src={auth.currentUser?.photoURL || ''} alt={auth.currentUser?.displayName || 'User'} className="w-8 h-8 rounded-full object-cover"/>
+                                        <p className="font-semibold text-sm ml-3">{auth.currentUser?.displayName}</p>
+                                    </div>
+                                    <TextAreaInput 
+                                        id="caption"
+                                        label={t('createPost.captionLabel')}
+                                        value={caption}
+                                        onChange={(e) => setCaption(e.target.value)}
+                                        className="!min-h-[150px]"
+                                    />
+                                    <div className="flex items-center justify-between w-full mt-4">
+                                        <div>
+                                            <label htmlFor="venting-mode-post" className="font-semibold text-sm">{t('ventingMode.title')}</label>
+                                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('ventingMode.description')}</p>
+                                        </div>
+                                        <label htmlFor="venting-mode-post" className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                id="venting-mode-post" 
+                                                className="sr-only peer"
+                                                checked={isVenting}
+                                                onChange={() => setIsVenting(!isVenting)}
+                                            />
+                                            <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                                        </label>
+                                    </div>
+
+                                    {isVenting && (
+                                        <button type="button" onClick={() => setIsFollowerModalOpen(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1 text-left">
+                                            {allowedViewers.length > 0 ? t('ventingMode.audienceSelected', { count: allowedViewers.length }) : t('ventingMode.audienceButton')}
+                                        </button>
+                                    )}
+
+                                    {isSpotifyConnected === null ? (
+                                        <div className="h-8 mt-2" /> // Placeholder to prevent layout shift
+                                    ) : isSpotifyConnected ? (
+                                        <>
+                                            {selectedMusic ? (
+                                                <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md mt-2">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        <MusicIcon />
+                                                        <div className="text-sm">
+                                                            <p className="font-semibold truncate">{selectedMusic.name}</p>
+                                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists[0]?.name}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2">&times;</button>
+                                                </div>
+                                            ) : (
+                                                <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1">
+                                                    {t('createPost.addMusic')}
+                                                </button>
+                                            )}
+                                            {showMusicSearch && (
+                                                <MusicSearch selectedTrack={selectedMusic} onSelectMusic={handleSelectMusic} onClose={() => setShowMusicSearch(false)} />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="mt-2 text-center md:text-left">
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+                                                {t('musicSearch.connectSpotifyMessage')}
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={redirectToAuth}
+                                                className="bg-green-500 text-white font-semibold rounded-lg py-1.5 px-4 text-sm hover:bg-green-600 transition-colors"
+                                            >
+                                                {t('musicSearch.connectSpotifyButton')}
+                                            </button>
+                                        </div>
+                                    )}
+                                    {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center p-16">
+                                <ImageUploadIcon />
+                                <h3 className="text-xl mt-4 mb-2">{t('createPost.dragPhotos')}</h3>
+                                <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/png, image/jpeg" />
+                                <Button onClick={triggerFileInput}>
+                                    {t('createPost.selectFromComputer')}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+            <FollowerSelectionModal
+                isOpen={isFollowerModalOpen}
+                onClose={() => setIsFollowerModalOpen(false)}
+                onSelectFollowers={setAllowedViewers}
+                initiallySelected={allowedViewers}
+            />
+        </>
     )
 };
 

@@ -1,4 +1,3 @@
-
 {
   "common": {
     "online": "Online",
@@ -132,7 +131,9 @@
     "placeholder": "Buscar uma música...",
     "searching": "Buscando...",
     "noResults": "Nenhum resultado encontrado.",
-    "apiError": "Não foi possível carregar músicas agora."
+    "apiError": "Não foi possível carregar músicas agora.",
+    "connectSpotifyMessage": "Para buscar músicas, conecte-se ao Spotify.",
+    "connectSpotifyButton": "Conectar com Spotify"
   },
   "messages": {
     "title": "Mensagens",
@@ -192,6 +193,16 @@
   },
   "welcome": {
     "title": "Bem vindo ao Mundo MP 1.15"
+  },
+  "ventingMode": {
+    "title": "Modo Desabafo",
+    "description": "Apenas seguidores selecionados poderão ver esta publicação.",
+    "selectAudience": "Selecionar Público",
+    "audienceButton": "Selecionar quem pode ver",
+    "audienceSelected": "{count} pessoas selecionadas",
+    "done": "Concluir",
+    "searchFollowers": "Pesquisar seguidores...",
+    "noFollowersFound": "Nenhum seguidor encontrado."
   },
   "footer": {
     "language": "Português (Brasil)",

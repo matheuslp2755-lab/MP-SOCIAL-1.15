@@ -191,6 +191,16 @@
   "welcome": {
     "title": "Welcome to Mundo MP 1.15"
   },
+  "ventingMode": {
+    "title": "Venting Mode",
+    "description": "Only selected followers will be able to see this post.",
+    "selectAudience": "Select Audience",
+    "audienceButton": "Select who can see",
+    "audienceSelected": "{count} people selected",
+    "done": "Done",
+    "searchFollowers": "Search followers...",
+    "noFollowersFound": "No followers found."
+  },
   "footer": {
     "language": "English",
     "copyright": "© {year} Mundo MP from Meta",

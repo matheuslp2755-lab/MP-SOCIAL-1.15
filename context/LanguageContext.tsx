@@ -198,6 +198,16 @@ const messages = {
   "welcome": {
     "title": "Bem vindo ao Mundo MP 1.15"
   },
+  "ventingMode": {
+    "title": "Modo Desabafo",
+    "description": "Apenas seguidores selecionados poderão ver esta publicação.",
+    "selectAudience": "Selecionar Público",
+    "audienceButton": "Selecionar quem pode ver",
+    "audienceSelected": "{count} pessoas selecionadas",
+    "done": "Concluir",
+    "searchFollowers": "Pesquisar seguidores...",
+    "noFollowersFound": "Nenhum seguidor encontrado."
+  },
   "footer": {
     "language": "Português (Brasil)",
     "copyright": "© {year} Mundo MP da Meta",

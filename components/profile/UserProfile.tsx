@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import {
@@ -67,6 +69,8 @@ type Post = {
     musicName?: string;
     musicArtist?: string;
     spotifyTrackId?: string;
+    isVenting?: boolean;
+    allowedViewers?: string[];
 };
 
 type Pulse = {
@@ -80,6 +84,8 @@ type Pulse = {
         artista: string;
         preview: string;
     };
+    isVenting?: boolean;
+    allowedViewers?: string[];
 };
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {
@@ -114,19 +120,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
 
             const followersQuery = collection(db, 'users', userId, 'followers');
             const followingQuery = collection(db, 'users', userId, 'following');
-            // Removed orderBy to prevent potential index-related permission errors
-            const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
-            const pulsesQuery = query(collection(db, 'pulses'), where('authorId', '==', userId));
-
-            const [followersSnap, followingSnap, postsSnap, pulsesSnap] = await Promise.all([
+            
+            const [followersSnap, followingSnap] = await Promise.all([
                 getDocs(followersQuery),
                 getDocs(followingQuery),
-                getDocs(postsQuery),
-                getDocs(pulsesQuery)
             ]);
             
-            setStats({ posts: postsSnap.size, followers: followersSnap.size, following: followingSnap.size });
-
             let userIsFollowing = false;
             if (currentUser && currentUser.uid !== userId) {
                 const followingDoc = await getDoc(doc(db, 'users', currentUser.uid, 'following', userId));
@@ -139,19 +138,50 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 }
             }
             
-            if (currentUser?.uid === userId || !userData.isPrivate || userIsFollowing) {
-                const userPosts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
-                // Sort client-side
-                userPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                setPosts(userPosts);
-                
-                const userPulses = pulsesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pulse));
-                // Sort client-side
-                userPulses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                setPulses(userPulses);
+            const isOwnProfile = currentUser?.uid === userId;
+            const canViewContent = isOwnProfile || !userData.isPrivate || userIsFollowing;
+            
+            if (canViewContent) {
+                 const postsCollection = collection(db, 'posts');
+                 const pulsesCollection = collection(db, 'pulses');
+                 
+                 const publicPostsQuery = query(postsCollection, where('userId', '==', userId), where('isVenting', '==', false));
+                 const publicPulsesQuery = query(pulsesCollection, where('authorId', '==', userId), where('isVenting', '==', false));
+                 
+                 const queriesToRun = [getDocs(publicPostsQuery), getDocs(publicPulsesQuery)];
+
+                 if (isOwnProfile) {
+                     queriesToRun.push(getDocs(query(postsCollection, where('userId', '==', userId), where('isVenting', '==', true))));
+                     queriesToRun.push(getDocs(query(pulsesCollection, where('authorId', '==', userId), where('isVenting', '==', true))));
+                 } else {
+                     queriesToRun.push(getDocs(query(postsCollection, where('userId', '==', userId), where('allowedViewers', 'array-contains', currentUser?.uid))));
+                     queriesToRun.push(getDocs(query(pulsesCollection, where('authorId', '==', userId), where('allowedViewers', 'array-contains', currentUser?.uid))));
+                 }
+                 
+                 const [publicPostsSnap, publicPulsesSnap, ventingPostsSnap, ventingPulsesSnap] = await Promise.all(queriesToRun);
+
+                 const allPostsMap = new Map<string, Post>();
+                 publicPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+                 ventingPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
+                 const userPosts = Array.from(allPostsMap.values());
+                 userPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                 setPosts(userPosts);
+
+                 const allPulsesMap = new Map<string, Pulse>();
+                 publicPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as Pulse));
+                 ventingPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as Pulse));
+                 const userPulses = Array.from(allPulsesMap.values());
+                 userPulses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                 setPulses(userPulses);
+
+                 setStats({ posts: userPosts.length, followers: followersSnap.size, following: followingSnap.size });
+
             } else {
                 setPosts([]);
                 setPulses([]);
+                const allPostsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
+                const allPostsSnap = await getDocs(allPostsQuery);
+                setStats({ posts: allPostsSnap.size, followers: followersSnap.size, following: followingSnap.size });
             }
 
             setLoading(false);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { searchSpotifyTracks, SpotifyTrack, redirectToAuth } from './spotifyApi';
@@ -5,9 +6,10 @@ import { searchSpotifyTracks, SpotifyTrack, redirectToAuth } from './spotifyApi'
 interface MusicSearchProps {
     onSelectMusic: (track: SpotifyTrack) => void;
     onClose: () => void;
+    selectedTrack?: SpotifyTrack | null;
 }
 
-const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose }) => {
+const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selectedTrack }) => {
     const { t } = useLanguage();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SpotifyTrack[]>([]);
@@ -87,8 +89,10 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose }) => 
                     <div
                         key={track.id}
                         onClick={track.preview_url ? () => onSelectMusic(track) : undefined}
-                        className={`p-2 flex items-center gap-3 rounded-md ${
-                            track.preview_url
+                        className={`p-2 flex items-center gap-3 rounded-md transition-colors ${
+                            selectedTrack?.id === track.id
+                            ? 'bg-sky-100 dark:bg-sky-900'
+                            : track.preview_url
                             ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
                             : 'opacity-50 cursor-not-allowed'
                         }`}

@@ -104,7 +104,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     };
 
     const handleSelectMusic = (track: SpotifyTrack) => {
-        console.log("Selecionou track:", track.id, track);
+        console.log("Selecionou track:", track.id);
         setSelectedMusic(track);
         setShowMusicSearch(false);
     };
@@ -171,7 +171,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     id: selectedMusic.id,
                     name: selectedMusic.name,
                     artists: selectedMusic.artists.map(a => a.name),
-                    albumImage: selectedMusic.album.images?.[1]?.url || selectedMusic.album.images?.[0]?.url || '',
+                    albumImage: selectedMusic.album.images?.[0]?.url || '',
                     uri: selectedMusic.uri,
                     preview_url: selectedMusic.preview_url,
                 };
@@ -262,7 +262,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                             {selectedMusic ? (
                                                 <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md mt-2">
                                                     <div className="flex items-center gap-3 overflow-hidden">
-                                                        <img src={selectedMusic.album.images[2]?.url || selectedMusic.album.images[0]?.url} alt={selectedMusic.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />
+                                                        <img src={selectedMusic.album.images?.[0]?.url} alt={selectedMusic.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />
                                                         <div className="text-sm">
                                                             <p className="font-semibold truncate">{selectedMusic.name}</p>
                                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists.map(a => a.name).join(', ')}</p>

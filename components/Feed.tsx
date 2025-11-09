@@ -24,7 +24,7 @@ type MusicData = {
     preview_url: string | null;
 };
 
-type PostType = {
+export type PostType = {
     id: string;
     userId: string;
     username: string;
@@ -36,9 +36,11 @@ type PostType = {
     music?: MusicData;
     isVenting?: boolean;
     allowedViewers?: string[];
+    // For backward compatibility
+    spotifyTrackId?: string;
 };
 
-type PulseType = {
+export type PulseType = {
     id: string;
     mediaUrl: string;
     legenda: string;

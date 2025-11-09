@@ -5,27 +5,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
 import SpotifyPlayer from '../common/SpotifyPlayer';
-
-type PostType = {
-    id: string;
-    userId: string;
-    username: string;
-    userAvatar: string;
-    imageUrl: string;
-    caption: string;
-    likes: string[];
-    timestamp: { seconds: number; nanoseconds: number };
-    music?: {
-        id: string;
-        name: string;
-        artists: string[];
-        albumImage: string;
-        uri: string;
-        preview_url: string | null;
-    };
-    isVenting?: boolean;
-    allowedViewers?: string[];
-};
+import { PostType } from '../Feed';
 
 type CommentType = {
     id: string;
@@ -355,6 +335,8 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
     });
   };
 
+  const trackId = post.music?.id || post.spotifyTrackId;
+
   return (
     <>
         <article ref={postRef} className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
@@ -422,9 +404,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <span className="font-semibold mr-2">{post.username}</span>
                     {renderTextWithMentions(post.caption)}
                 </p>
-                {post.music?.id && (
+                {trackId && (
                     <div className="!mt-2">
-                        <SpotifyPlayer trackId={post.music.id} />
+                        <SpotifyPlayer trackId={trackId} />
                     </div>
                 )}
                  {comments.slice(0, 2).reverse().map(comment => (

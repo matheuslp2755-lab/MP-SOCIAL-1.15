@@ -4,29 +4,14 @@ import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '
 import { useLanguage } from '../../context/LanguageContext';
 import PulseViewsModal from './PulseViewsModal';
 import SpotifyPlayer from '../common/SpotifyPlayer';
-
-type Pulse = {
-    id: string;
-    mediaUrl: string;
-    legenda: string;
-    createdAt: { seconds: number; nanoseconds: number };
-    authorId: string;
-    musica?: {
-        id: string;
-        name: string;
-        artists: string[];
-        albumImage: string;
-        uri: string;
-        preview_url: string | null;
-    };
-};
+import { PulseType } from '../Feed';
 
 interface PulseViewerModalProps {
-    pulses: Pulse[];
+    pulses: PulseType[];
     initialPulseIndex: number;
     authorInfo: { id: string, username: string, avatar: string };
     onClose: () => void;
-    onDelete: (pulse: Pulse) => void;
+    onDelete: (pulse: PulseType) => void;
 }
 
 const TrashIcon: React.FC<{className?: string}> = ({ className }) => (

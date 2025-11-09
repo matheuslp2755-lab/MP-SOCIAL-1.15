@@ -15,10 +15,14 @@ type PostType = {
     caption: string;
     likes: string[];
     timestamp: { seconds: number; nanoseconds: number };
-    musicName?: string;
-    musicArtist?: string;
-    spotifyTrackId?: string;
-    musicPreviewUrl?: string;
+    music?: {
+        id: string;
+        name: string;
+        artists: string[];
+        albumImage: string;
+        uri: string;
+        preview_url: string | null;
+    };
     isVenting?: boolean;
     allowedViewers?: string[];
 };
@@ -418,9 +422,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <span className="font-semibold mr-2">{post.username}</span>
                     {renderTextWithMentions(post.caption)}
                 </p>
-                {post.spotifyTrackId && (
+                {post.music?.id && (
                     <div className="!mt-2">
-                        <SpotifyPlayer trackId={post.spotifyTrackId} />
+                        <SpotifyPlayer trackId={post.music.id} />
                     </div>
                 )}
                  {comments.slice(0, 2).reverse().map(comment => (

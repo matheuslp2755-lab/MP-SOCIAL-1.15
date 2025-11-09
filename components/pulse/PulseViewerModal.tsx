@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { auth, db, doc, setDoc, serverTimestamp, collection, onSnapshot } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
@@ -11,10 +12,12 @@ type Pulse = {
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
     musica?: {
-        nome: string;
-        artista: string;
-        preview: string;
-        spotifyTrackId?: string;
+        id: string;
+        name: string;
+        artists: string[];
+        albumImage: string;
+        uri: string;
+        preview_url: string | null;
     };
 };
 
@@ -153,9 +156,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent rounded-b-lg text-white">
                     {currentPulse.legenda && <p className="text-sm mb-2">{currentPulse.legenda}</p>}
-                    {currentPulse.musica?.spotifyTrackId && (
+                    {currentPulse.musica?.id && (
                         <div className="mt-2">
-                            <SpotifyPlayer trackId={currentPulse.musica.spotifyTrackId} />
+                            <SpotifyPlayer trackId={currentPulse.musica.id} />
                         </div>
                     )}
                     {currentUser?.uid === authorInfo.id && (

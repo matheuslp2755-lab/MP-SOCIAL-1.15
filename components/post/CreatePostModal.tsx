@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -24,8 +25,6 @@ interface CreatePostModalProps {
   onClose: () => void;
   onPostCreated: () => void;
 }
-
-const MusicIcon = () => <svg className="w-5 h-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z"></path></svg>;
 
 const ImageUploadIcon: React.FC = () => (
     <svg aria-label="Icon to represent media such as images or videos" className="w-24 h-24 text-zinc-800 dark:text-zinc-200" fill="currentColor" role="img" viewBox="0 0 97.6 77.3"><path d="M16.3 24h.3c2.8-.2 4.9-2.6 4.8-5.4A4.9 4.9 0 0 0 16 13.6c-2.8.2-4.9 2.6-4.8 5.4.1 2.7 2.4 4.8 5.1 5zM42.4 28.9c-2.8.2-5.4-2-5.6-4.8-.2-2.8 2-5.4 4.8-5.6 2.8-.2 5.4 2 5.6 4.8.2 2.8-2 5.4-4.8 5.6z" fill="currentColor"></path><path d="M84.7 18.4 58 16.9l-.2-3.2c-.3-5.7-5.2-10.1-11-9.8L12.9 6c-5.7.3-10.1 5.2-9.8 11L5 51.1v.8c.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4l-14.4 1.1c-1.2.1-2.2-1-2.1-2.2l-.2-3.2 14.5-1.2c5.7-.3 10.1-5.2 9.8-11L51 15.1l18.7 1.4c1.2.1 2.2 1 2.1 2.2l.2 3.2-18.7-1.4c-5.7.3-10.1 5.2-9.8 11l-1.9 24.7c.1 1.2 1 2.2 2.2 2.1l14.4-1.1v9.4l-24.7 1.9c-5.7-.3-10.1-5.2-9.8-11L18.4 25.6v-.8c-.3-5.7 5.2-10.1 11-9.8l24.7 1.9v9.4l14.4-1.1c1.2-.1 2.2 1 2.1 2.2l.2 3.2-14.5 1.2c-5.7.3-10.1 5.2-9.8 11L49 60.3l-18.7-1.4c-1.2-.1-2.2-1-2.1-2.2l-.2-3.2 18.7 1.4c5.7-.3 10.1-5.2 9.8-11l1.9-24.7c-.1-1.2-1-2.2-2.2-2.1L31.2 20.1v-9.4l24.7-1.9c5.7.3 10.1 5.2 9.8 11l-2.1 28.9.2.6c.3 5.7-5.2 10.1-11 9.8L31.2 68.1v.8c.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4l-14.4 1.1c-1.2.1-2.2-1-2.1-2.2l-.2-3.2 14.5-1.2c5.7-.3 10.1-5.2 9.8-11L72.2 19l14.5-1.2c1.2-.1 2.2 1 2.1 2.2l-.2 3.2-14.5 1.2c-5.7.3-10.1 5.2-9.8 11l-1.9 24.7c.1 1.2 1 2.2 2.2 2.1l14.4-1.1v9.4l-24.7 1.9c-5.7-.3-10.1-5.2-9.8-11l2.1-28.9-.2-.6c-.3-5.7 5.2-10.1 11-9.8l21.5 1.7 2.1-28.9c-.3-5.7-5.2-10.1-11-9.8L21.5 4.9v.8c-.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4L31.2 6C25.5 5.7 21.1.8 21.4-5l2.1-28.9c.3-5.7 5.2-10.1 11-9.8l42.2-3.2c5.7-.3 10.1 5.2 9.8 11z" fill="currentColor"></path></svg>
@@ -105,6 +104,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     };
 
     const handleSelectMusic = (track: SpotifyTrack) => {
+        console.log("Selecionou track:", track.id, track);
         setSelectedMusic(track);
         setShowMusicSearch(false);
     };
@@ -167,10 +167,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             };
 
             if (selectedMusic) {
-                postData.musicName = selectedMusic.name;
-                postData.musicArtist = selectedMusic.artists[0]?.name || 'Unknown Artist';
-                postData.spotifyTrackId = selectedMusic.id;
-                postData.musicPreviewUrl = selectedMusic.preview_url;
+                postData.music = {
+                    id: selectedMusic.id,
+                    name: selectedMusic.name,
+                    artists: selectedMusic.artists.map(a => a.name),
+                    albumImage: selectedMusic.album.images?.[1]?.url || selectedMusic.album.images?.[0]?.url || '',
+                    uri: selectedMusic.uri,
+                    preview_url: selectedMusic.preview_url,
+                };
             }
 
             if (isVenting) {
@@ -257,14 +261,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                         <>
                                             {selectedMusic ? (
                                                 <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md mt-2">
-                                                    <div className="flex items-center gap-2 overflow-hidden">
-                                                        <MusicIcon />
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                        <img src={selectedMusic.album.images[2]?.url || selectedMusic.album.images[0]?.url} alt={selectedMusic.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />
                                                         <div className="text-sm">
                                                             <p className="font-semibold truncate">{selectedMusic.name}</p>
-                                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists[0]?.name}</p>
+                                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists.map(a => a.name).join(', ')}</p>
                                                         </div>
                                                     </div>
-                                                    <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2">&times;</button>
+                                                    <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2 flex-shrink-0">&times;</button>
                                                 </div>
                                             ) : (
                                                 <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1">

@@ -1,3 +1,4 @@
+
 export interface SpotifyTrack {
     id: string;
     name: string;
@@ -7,6 +8,7 @@ export interface SpotifyTrack {
         images: { url: string }[];
     };
     duration_ms: number;
+    uri: string;
 }
 
 const clientId = 'ca3aed6612574a49b0516e7e5ecce076';

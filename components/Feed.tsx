@@ -15,6 +15,15 @@ const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
 );
 
+type MusicData = {
+    id: string;
+    name: string;
+    artists: string[];
+    albumImage: string;
+    uri: string;
+    preview_url: string | null;
+};
+
 type PostType = {
     id: string;
     userId: string;
@@ -24,10 +33,7 @@ type PostType = {
     caption: string;
     likes: string[]; // array of userIds
     timestamp: { seconds: number; nanoseconds: number };
-    musicName?: string;
-    musicArtist?: string;
-    spotifyTrackId?: string;
-    musicPreviewUrl?: string;
+    music?: MusicData;
     isVenting?: boolean;
     allowedViewers?: string[];
 };
@@ -38,12 +44,7 @@ type PulseType = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
-    musica?: {
-        nome: string;
-        artista: string;
-        preview: string;
-        spotifyTrackId?: string;
-    };
+    musica?: MusicData;
     isVenting?: boolean;
     allowedViewers?: string[];
 };

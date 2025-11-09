@@ -174,6 +174,7 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                     nome: selectedMusic.name,
                     artista: selectedMusic.artists[0]?.name || 'Artista Desconhecido',
                     preview: selectedMusic.preview_url,
+                    spotifyTrackId: selectedMusic.id,
                 };
             }
 

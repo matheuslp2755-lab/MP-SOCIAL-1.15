@@ -4,7 +4,7 @@ import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, 
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
-import MusicPlayer from '../common/MusicPlayer';
+import SpotifyPlayer from '../common/SpotifyPlayer';
 
 type PostType = {
     id: string;
@@ -76,7 +76,6 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
-  const [isIntersecting, setIsIntersecting] = useState(false);
   const postRef = useRef<HTMLElement>(null);
   const viewRegistered = useRef(false);
 
@@ -111,7 +110,6 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     const observer = new IntersectionObserver(
         ([entry]) => {
-            setIsIntersecting(entry.isIntersecting);
             if (entry.isIntersecting && !viewRegistered.current && currentUser.uid !== post.userId) {
                 viewRegistered.current = true;
                 const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
@@ -420,14 +418,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <span className="font-semibold mr-2">{post.username}</span>
                     {renderTextWithMentions(post.caption)}
                 </p>
-                {post.musicPreviewUrl && (
+                {post.spotifyTrackId && (
                     <div className="!mt-2">
-                        <MusicPlayer 
-                          trackName={post.musicName}
-                          artistName={post.musicArtist}
-                          previewUrl={post.musicPreviewUrl}
-                          shouldPlay={isIntersecting}
-                        />
+                        <SpotifyPlayer trackId={post.spotifyTrackId} />
                     </div>
                 )}
                  {comments.slice(0, 2).reverse().map(comment => (

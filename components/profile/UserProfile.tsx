@@ -78,6 +78,7 @@ type Pulse = {
         nome: string;
         artista: string;
         preview: string;
+        spotifyTrackId?: string;
     };
     isVenting?: boolean;
     allowedViewers?: string[];

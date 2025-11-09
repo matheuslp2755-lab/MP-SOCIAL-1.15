@@ -10,19 +10,17 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ trackId }) => {
   const embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`;
 
   return (
-    <div className="my-2">
-      <iframe
-        style={{ borderRadius: '12px' }}
-        src={embedUrl}
-        width="100%"
-        height="80"
-        frameBorder="0"
-        allowFullScreen={false}
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"
-        title={`Spotify Player for track ${trackId}`}
-      ></iframe>
-    </div>
+    <iframe
+      style={{ borderRadius: '12px' }}
+      src={embedUrl}
+      width="100%"
+      height="80"
+      frameBorder="0"
+      allowFullScreen={false}
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+      title={`Spotify Player for track ${trackId}`}
+    ></iframe>
   );
 };
 

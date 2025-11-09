@@ -103,11 +103,12 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                     return (
                         <div
                             key={track.id}
+                            onClick={() => handleTrackClick(track)}
                             className={`p-2 flex items-center gap-3 rounded-md transition-colors ${
                                 isSelected
                                 ? 'bg-sky-100 dark:bg-sky-900'
                                 : track.preview_url
-                                ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
                                 : 'opacity-50'
                             }`}
                         >
@@ -121,7 +122,10 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                             ) : (
                                 <button
                                     type="button"
-                                    onClick={() => handleTrackClick(track)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTrackClick(track);
+                                    }}
                                     disabled={!track.preview_url}
                                     className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                                 >

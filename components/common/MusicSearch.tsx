@@ -65,9 +65,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
     }, [query, t]);
     
     const handleTrackClick = (track: SpotifyTrack) => {
-        if (track.preview_url) {
-            onSelectMusic(track);
-        }
+        onSelectMusic(track);
     };
 
     return (
@@ -104,12 +102,10 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                         <div
                             key={track.id}
                             onClick={() => handleTrackClick(track)}
-                            className={`p-2 flex items-center gap-3 rounded-md transition-colors ${
+                            className={`p-2 flex items-center gap-3 rounded-md transition-colors cursor-pointer ${
                                 isSelected
                                 ? 'bg-sky-100 dark:bg-sky-900'
-                                : track.preview_url
-                                ? 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer'
-                                : 'opacity-50'
+                                : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
                             }`}
                         >
                             {smallestImage?.url && <img src={smallestImage.url} alt={track.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />}
@@ -126,8 +122,7 @@ const MusicSearch: React.FC<MusicSearchProps> = ({ onSelectMusic, onClose, selec
                                         e.stopPropagation();
                                         handleTrackClick(track);
                                     }}
-                                    disabled={!track.preview_url}
-                                    className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                    className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg transition-colors flex-shrink-0"
                                 >
                                     {t('musicSearch.selectButton')}
                                 </button>

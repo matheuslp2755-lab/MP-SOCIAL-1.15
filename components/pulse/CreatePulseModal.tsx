@@ -169,11 +169,11 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                 isVenting: isVenting,
             };
 
-            if (selectedMusic && selectedMusic.preview_url) {
+            if (selectedMusic) {
                 pulseData.musica = {
                     nome: selectedMusic.name,
                     artista: selectedMusic.artists[0]?.name || 'Artista Desconhecido',
-                    preview: selectedMusic.preview_url,
+                    preview: selectedMusic.preview_url || '',
                     spotifyTrackId: selectedMusic.id,
                 };
             }

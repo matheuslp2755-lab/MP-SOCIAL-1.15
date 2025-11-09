@@ -112,8 +112,7 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onSelectMus
                         return (
                             <div
                                 key={track.id}
-                                onClick={() => onSelectMusic(track)}
-                                className="p-2 flex items-center gap-3 rounded-md transition-colors cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                className="p-2 flex items-center gap-3 rounded-md transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
                             >
                                 {smallestImage?.url ? (
                                     <img src={smallestImage.url} alt={track.name} className="w-12 h-12 rounded-sm object-cover flex-shrink-0" />
@@ -126,7 +125,14 @@ const MusicSearchModal: React.FC<MusicSearchModalProps> = ({ isOpen, onSelectMus
                                     <p className="font-semibold text-sm truncate">{track.name}</p>
                                     <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{track.artists.map(a => a.name).join(', ')}</p>
                                 </div>
-                                <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">{formatDuration(track.duration_ms)}</span>
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0 mr-2">{formatDuration(track.duration_ms)}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => onSelectMusic(track)}
+                                    className="ml-auto text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg transition-colors flex-shrink-0"
+                                >
+                                    {t('musicSearch.selectButton')}
+                                </button>
                             </div>
                         );
                     })}

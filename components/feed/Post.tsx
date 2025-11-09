@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
@@ -402,14 +399,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
             </div>
-            {post.musicPreviewUrl && (
-                <MusicPlayer 
-                  trackName={post.musicName}
-                  artistName={post.musicArtist}
-                  previewUrl={post.musicPreviewUrl}
-                  shouldPlay={isIntersecting}
-                />
-            )}
+            
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">
                     <span>{likesCount.toLocaleString()} {t('post.likes')}</span>
@@ -430,6 +420,16 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <span className="font-semibold mr-2">{post.username}</span>
                     {renderTextWithMentions(post.caption)}
                 </p>
+                {post.musicPreviewUrl && (
+                    <div className="!mt-2">
+                        <MusicPlayer 
+                          trackName={post.musicName}
+                          artistName={post.musicArtist}
+                          previewUrl={post.musicPreviewUrl}
+                          shouldPlay={isIntersecting}
+                        />
+                    </div>
+                )}
                  {comments.slice(0, 2).reverse().map(comment => (
                     <div key={comment.id} className="flex items-center justify-between group">
                          <p className="flex-grow pr-2">

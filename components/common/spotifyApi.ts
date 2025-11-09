@@ -10,7 +10,7 @@ export interface SpotifyTrack {
 
 const clientId = 'ca3aed6612574a49b0516e7e5ecce076';
 // Use a dynamic redirect URI to work across different environments (local, prod)
-const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/` : "https://mp-social-1-15.vercel.app/";
+const redirectUri = "https://mp-social-1-15-m77a9daj8-matheuslp2755-labs-projects.vercel.app/";
 
 // --- PKCE Helper Functions ---
 function generateCodeVerifier(length: number): string {

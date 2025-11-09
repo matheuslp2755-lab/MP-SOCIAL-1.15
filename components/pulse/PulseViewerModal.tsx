@@ -122,6 +122,7 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
     }
     
     const isVideo = currentPulse.mediaUrl.includes('.mp4') || currentPulse.mediaUrl.includes('.webm');
+    const trackId = currentPulse.musica?.id;
 
     return (
       <>
@@ -141,9 +142,9 @@ const PulseViewerModal: React.FC<PulseViewerModalProps> = ({ pulses, initialPuls
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent rounded-b-lg text-white">
                     {currentPulse.legenda && <p className="text-sm mb-2">{currentPulse.legenda}</p>}
-                    {currentPulse.musica?.id && (
+                    {trackId && (
                         <div className="mt-2">
-                            <SpotifyPlayer trackId={currentPulse.musica.id} />
+                            <SpotifyPlayer trackId={trackId} />
                         </div>
                     )}
                     {currentUser?.uid === authorInfo.id && (

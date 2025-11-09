@@ -117,7 +117,8 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
     };
 
     const handleSelectMusic = (track: SpotifyTrack) => {
-        console.log("Selecionou track:", track.id);
+        console.log("Botão Selecionar clicado");
+        console.log("Música selecionada:", track);
         setSelectedMusic(track);
         setShowMusicSearch(false);
     };

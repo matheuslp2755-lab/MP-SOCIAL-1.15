@@ -13,7 +13,8 @@ export interface SpotifyTrack {
 
 const clientId = 'ca3aed6612574a49b0516e7e5ecce076';
 // Use a dynamic redirect URI to work across different environments (local, prod)
-const redirectUri = "https://mp-social-1-15-m77a9daj8-matheuslp2755-labs-projects.vercel.app/";
+const redirectUri = "https://mp-social-1-15.vercel.app/";
+
 
 // --- PKCE Helper Functions ---
 function generateCodeVerifier(length: number): string {
@@ -44,7 +45,8 @@ export async function redirectToAuth() {
     const challenge = await generateCodeChallenge(verifier);
 
     localStorage.setItem("spotify_code_verifier", verifier);
-    localStorage.setItem("spotify_auth_redirect_path", window.location.pathname);
+    localStorage.setItem("spotify_auth_redirect_path", window.location.pathname + window.location.search);
+
 
     const params = new URLSearchParams();
     params.append("client_id", clientId);

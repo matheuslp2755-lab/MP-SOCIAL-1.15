@@ -15,7 +15,7 @@ import {
 import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
-import MusicSearch from '../common/MusicSearch';
+import MusicSearchModal from '../common/MusicSearch';
 import { SpotifyTrack, getAccessToken, redirectToAuth } from '../common/spotifyApi';
 import FollowerSelectionModal from '../common/FollowerSelectionModal';
 
@@ -271,14 +271,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                                     {t('createPost.addMusic')}
                                                 </button>
                                             )}
-                                            {showMusicSearch && (
-                                                <MusicSearch 
-                                                    selectedTrack={selectedMusic} 
-                                                    onSelectMusic={handleSelectMusic} 
-                                                    onClose={() => setShowMusicSearch(false)}
-                                                    onConnect={handleConnectSpotify}
-                                                />
-                                            )}
                                         </>
                                     ) : (
                                         <div className="mt-2 text-center md:text-left">
@@ -310,6 +302,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     </div>
                 </div>
             </div>
+            <MusicSearchModal
+                isOpen={showMusicSearch}
+                onClose={() => setShowMusicSearch(false)}
+                onSelectMusic={handleSelectMusic}
+                onConnect={handleConnectSpotify}
+            />
             <FollowerSelectionModal
                 isOpen={isFollowerModalOpen}
                 onClose={() => setIsFollowerModalOpen(false)}

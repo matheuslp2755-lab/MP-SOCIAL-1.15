@@ -13,7 +13,7 @@ import {
 import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
-import MusicSearch from '../common/MusicSearch';
+import MusicSearchModal from '../common/MusicSearch';
 import { SpotifyTrack, getAccessToken, redirectToAuth } from '../common/spotifyApi';
 import FollowerSelectionModal from '../common/FollowerSelectionModal';
 
@@ -274,14 +274,6 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                                                     {t('createPulse.addMusic')}
                                                 </button>
                                             )}
-                                            {showMusicSearch && (
-                                                <MusicSearch 
-                                                    selectedTrack={selectedMusic} 
-                                                    onSelectMusic={handleSelectMusic} 
-                                                    onClose={() => setShowMusicSearch(false)}
-                                                    onConnect={handleConnectSpotify}
-                                                />
-                                            )}
                                         </>
                                     ) : (
                                         <div className="mt-2 text-center md:text-left">
@@ -314,6 +306,12 @@ const CreatePulseModal: React.FC<CreatePulseModalProps> = ({ isOpen, onClose, on
                     </div>
                 </div>
             </div>
+            <MusicSearchModal
+                isOpen={showMusicSearch}
+                onClose={() => setShowMusicSearch(false)}
+                onSelectMusic={handleSelectMusic}
+                onConnect={handleConnectSpotify}
+            />
             <FollowerSelectionModal
                 isOpen={isFollowerModalOpen}
                 onClose={() => setIsFollowerModalOpen(false)}

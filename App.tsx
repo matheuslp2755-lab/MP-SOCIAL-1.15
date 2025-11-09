@@ -6,43 +6,18 @@ import SignUp from './context/SignUp';
 import Feed from './components/Feed';
 import { LanguageProvider } from './context/LanguageContext';
 import WelcomeAnimation from './components/common/WelcomeAnimation';
-import { exchangeCodeForToken } from './components/common/spotifyApi';
 
-const Toast: React.FC<{ title: string; body: string; onClose: () => void }> = ({ title, body, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 5000); // Auto-close after 5 seconds
-    return () => clearTimeout(timer);
-  }, [onClose]);
+// Spotify Credentials for OAuth callback
+const SPOTIFY_CLIENT_ID = 'ca3aed6612574a49b0516e7e5ecce076';
+const SPOTIFY_CLIENT_SECRET = '185edb9e62ee423e8bca1475e06bd365';
+const SPOTIFY_REDIRECT_URI = 'https://mp-social-1-15-lljpgvjru-matheuslp2755-labs-projects.vercel.app/';
 
-  return (
-    <div className="fixed top-5 right-5 bg-white dark:bg-zinc-800 shadow-lg rounded-lg p-4 max-w-sm z-[100] border dark:border-zinc-700 animate-slide-in-right">
-      <div className="flex items-start">
-        <div className="flex-shrink-0">
-          <svg className="h-6 w-6 text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-        </div>
-        <div className="ml-3 w-0 flex-1 pt-0.5">
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{title}</p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{body}</p>
-        </div>
-        <div className="ml-4 flex-shrink-0 flex">
-          <button onClick={onClose} className="bg-white dark:bg-zinc-800 rounded-md inline-flex text-zinc-400 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
-            <span className="sr-only">Close</span>
-            &times;
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const AppContent: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authPage, setAuthPage] = useState<'login' | 'signup'>('login');
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(false);
-  const [toast, setToast] = useState<{ title: string; body: string } | null>(null);
 
   useEffect(() => {
     const welcomeKey = 'hasSeenWelcome_1_15';
@@ -54,28 +29,72 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Handle Spotify OAuth Callback
+    const handleSpotifyCallback = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const storedState = localStorage.getItem('spotify_auth_state');
+
+      if (code && state && state === storedState) {
+        localStorage.removeItem('spotify_auth_state');
+        
+        try {
+            // NOTE: In a production app, the client secret should be kept on a server and not exposed
+            // on the client-side. This token exchange would happen on a backend server.
+            const response = await fetch('https://accounts.spotify.com/api/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Basic ' + btoa(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET)
+                },
+                body: new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    code: code,
+                    redirect_uri: SPOTIFY_REDIRECT_URI
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Failed to exchange Spotify code for token: ${errorData.error_description}`);
+            }
+            const data = await response.json();
+            
+            const spotifyAuth = {
+                accessToken: data.access_token,
+                refreshToken: data.refresh_token,
+                expiresAt: Date.now() + (data.expires_in * 1000),
+            };
+            localStorage.setItem('spotify_auth_data', JSON.stringify(spotifyAuth));
+
+        } catch (error) {
+            console.error("Error handling Spotify callback:", error);
+            localStorage.removeItem('spotify_auth_data');
+        } finally {
+             // Clean the URL to remove the code and state parameters
+             window.history.replaceState({}, document.title, "/");
+        }
+      } else if (state && state !== storedState) {
+          console.error("Spotify state mismatch. Potential CSRF attack.");
+          localStorage.removeItem('spotify_auth_state');
+          window.history.replaceState({}, document.title, "/");
+      } else if (params.get('error')) {
+          console.error(`Spotify auth error: ${params.get('error')}`);
+          window.history.replaceState({}, document.title, "/");
+      }
+    };
+
+    handleSpotifyCallback();
+  }, []);
+
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
-
-    if (error) {
-        console.error("Erro de autenticação do Spotify:", error);
-        window.history.pushState({}, '', '/'); // Limpa a URL
-    } else if (code) {
-        exchangeCodeForToken(code).then(() => {
-            const redirectPath = localStorage.getItem("spotify_auth_redirect_path") || '/';
-            localStorage.removeItem("spotify_auth_redirect_path");
-            window.history.pushState({}, '', redirectPath); // Limpa a URL e restaura o caminho
-        });
-    }
   }, []);
 
   useEffect(() => {
@@ -142,12 +161,8 @@ const AppContent: React.FC = () => {
 
     const unsubscribeOnMessage = onMessage(messaging, (payload) => {
       console.log('Foreground message received. ', payload);
-      if (payload.notification) {
-          setToast({
-              title: payload.notification.title || 'Nova Notificação',
-              body: payload.notification.body || ''
-          });
-      }
+      // You can display a toast notification here.
+      // For example: new Notification(payload.notification.title, { body: payload.notification.body });
     });
     
     return () => {
@@ -194,7 +209,6 @@ const AppContent: React.FC = () => {
       {showWelcomeAnimation && (
         <WelcomeAnimation onAnimationEnd={() => setShowWelcomeAnimation(false)} />
       )}
-      {toast && <Toast title={toast.title} body={toast.body} onClose={() => setToast(null)} />}
       {renderApp()}
     </>
   );

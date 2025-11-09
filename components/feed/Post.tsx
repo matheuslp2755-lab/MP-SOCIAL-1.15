@@ -1,11 +1,44 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from '../post/PostViewsModal';
-import SpotifyPlayer from '../common/SpotifyPlayer';
-import { PostType } from '../Feed';
+
+// Simple singleton to manage audio playback, ensuring only one track plays at a time.
+const audioManager = {
+    currentlyPlaying: null as HTMLAudioElement | null,
+    play: function(audioElement: HTMLAudioElement) {
+        if (this.currentlyPlaying && this.currentlyPlaying !== audioElement) {
+            this.currentlyPlaying.pause();
+        }
+        this.currentlyPlaying = audioElement;
+        this.currentlyPlaying.play();
+    },
+    pause: function() {
+        if (this.currentlyPlaying) {
+            this.currentlyPlaying.pause();
+            this.currentlyPlaying = null;
+        }
+    }
+};
+
+
+type PostType = {
+    id: string;
+    userId: string;
+    username: string;
+    userAvatar: string;
+    imageUrl: string;
+    caption: string;
+    likes: string[];
+    timestamp: { seconds: number; nanoseconds: number };
+    music?: {
+        title: string;
+        artist: string;
+        url: string;
+        albumArtUrl?: string;
+    };
+};
 
 type CommentType = {
     id: string;
@@ -21,11 +54,12 @@ type UserSearchResult = {
     avatar: string;
 };
 
-const LockIcon: React.FC<{className?: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+const MusicIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V7.5A2.25 2.25 0 0013.5 6h-3a2.25 2.25 0 00-2.25 2.25v1.5m0 12.153V15m0 0a2.453 2.453 0 01-1.086.207l-2.16-.62a2.25 2.25 0 01-1.632-2.163V7.5a2.25 2.25 0 012.25-2.25h3.879a2.25 2.25 0 012.25 2.25v9.473a2.453 2.453 0 01-1.086.207l-2.16.62a2.25 2.25 0 00-1.632 2.163v1.947z" />
     </svg>
 );
+
 
 const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> = ({ className, isLiked, title }) => (
   <svg aria-label={title} className={className} fill={isLiked ? '#ef4444' : 'currentColor'} height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M16.792 3.904A4.989 4.989 0 0 1 21.5 9.122c0 3.072-2.652 4.959-6.12 8.351C12.89 20.72 12.434 21 12 21s-.89-.28-1.38-.627C7.152 14.08 4.5 12.192 4.5 9.122a4.989 4.989 0 0 1 4.708-5.218 4.21 4.21 0 0 1 3.675 1.941c.84 1.175.98 1.763 1.12 1.763s.278-.588 1.118-1.763a4.21 4.21 0 0 1 3.675-1.941Z"></path></svg>
@@ -33,6 +67,10 @@ const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> 
 
 const CommentIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
     <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></path></svg>
+);
+
+const ShareIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+  <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
 );
 
 const MoreIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
@@ -61,7 +99,9 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
   const postRef = useRef<HTMLElement>(null);
-  const viewRegistered = useRef(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<UserSearchResult[]>([]);
@@ -88,19 +128,19 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   }, [post.id]);
   
   useEffect(() => {
-    if (!postRef.current || !currentUser) {
+    if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
         return;
     }
 
     const observer = new IntersectionObserver(
-        ([entry]) => {
-            if (entry.isIntersecting && !viewRegistered.current && currentUser.uid !== post.userId) {
-                viewRegistered.current = true;
+        async ([entry]) => {
+            if (entry.isIntersecting) {
                 const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
-                setDoc(viewRef, {
+                await setDoc(viewRef, {
                     userId: currentUser.uid,
                     viewedAt: serverTimestamp()
-                }).catch(console.error);
+                });
+                observer.unobserve(entry.target);
             }
         },
         {
@@ -126,6 +166,23 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     return () => unsubscribe();
   }, [post.id]);
+  
+    useEffect(() => {
+        const audio = audioRef.current;
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+        const handleEnded = () => setIsPlaying(false);
+
+        audio?.addEventListener('play', handlePlay);
+        audio?.addEventListener('pause', handlePause);
+        audio?.addEventListener('ended', handleEnded);
+
+        return () => {
+            audio?.removeEventListener('play', handlePlay);
+            audio?.removeEventListener('pause', handlePause);
+            audio?.removeEventListener('ended', handleEnded);
+        };
+    }, []);
 
   const handleLikeToggle = async () => {
     if (!currentUser) return;
@@ -335,19 +392,23 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
     });
   };
 
-  const trackId = post.music?.id || post.spotifyTrackId;
+  const handlePlayToggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+        audioManager.pause();
+    } else {
+        audioManager.play(audio);
+    }
+  };
 
   return (
     <>
         <article ref={postRef} className="bg-white dark:bg-black border border-zinc-300 dark:border-zinc-800 rounded-lg">
         <div className="flex items-center p-3">
             <img src={post.userAvatar} alt={post.username} className="w-8 h-8 rounded-full object-cover" />
-            <div className="flex items-center ml-3">
-                <span className="font-semibold text-sm">{post.username}</span>
-                {post.isVenting && post.userId === currentUser?.uid && (
-                    <LockIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400 ml-2" />
-                )}
-            </div>
+            <span className="font-semibold text-sm ml-3">{post.username}</span>
             {currentUser?.uid === post.userId && (
                  <div className="ml-auto relative">
                     <button onClick={() => setIsOptionsOpen(prev => !prev)}>
@@ -370,8 +431,41 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
             )}
         </div>
         
-        <div>
+        <div className="relative">
             <img src={post.imageUrl} alt="Post content" className="w-full object-cover" />
+            {post.music && (
+                <>
+                <audio ref={audioRef} src={post.music.url} loop />
+                <button
+                    onClick={handlePlayToggle}
+                    className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-sm text-white rounded-full py-1.5 px-3 text-sm"
+                >
+                    {post.music.albumArtUrl ? (
+                        <img src={post.music.albumArtUrl} alt={post.music.title} className="w-6 h-6 rounded object-cover" />
+                    ) : (
+                        <MusicIcon className="w-4 h-4" />
+                    )}
+                    <div className="flex items-center gap-1 font-semibold max-w-[150px] truncate">
+                        <span className="truncate">{post.music.title}</span>
+                        <span className="opacity-70">•</span>
+                        <span className="truncate">{post.music.artist}</span>
+                    </div>
+                    {isPlaying && (
+                        <div className="flex items-end gap-0.5 h-3">
+                            <span className="w-0.5 bg-white animate-[sound-bar_1s_ease-in-out_infinite_alternate] [animation-delay:-0.5s]"></span>
+                            <span className="w-0.5 bg-white animate-[sound-bar_1s_ease-in-out_infinite_alternate] [animation-delay:-0.25s]"></span>
+                            <span className="w-0.5 bg-white animate-[sound-bar_1s_ease-in-out_infinite_alternate]"></span>
+                        </div>
+                    )}
+                </button>
+                </>
+            )}
+            <style>{`
+                @keyframes sound-bar {
+                    0% { height: 0.125rem; }
+                    100% { height: 0.75rem; }
+                }
+            `}</style>
         </div>
 
         <div className="p-4">
@@ -382,8 +476,10 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                 <button>
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
+                <button>
+                    <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                </button>
             </div>
-            
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">
                     <span>{likesCount.toLocaleString()} {t('post.likes')}</span>
@@ -404,11 +500,6 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                     <span className="font-semibold mr-2">{post.username}</span>
                     {renderTextWithMentions(post.caption)}
                 </p>
-                {trackId && (
-                    <div className="!mt-2">
-                        <SpotifyPlayer trackId={trackId} />
-                    </div>
-                )}
                  {comments.slice(0, 2).reverse().map(comment => (
                     <div key={comment.id} className="flex items-center justify-between group">
                          <p className="flex-grow pr-2">

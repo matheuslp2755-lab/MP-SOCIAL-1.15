@@ -152,7 +152,9 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
                                             </p>
                                         )}
                                     </div>
-                                    <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
+                                    <p className={`text-sm text-zinc-500 dark:text-zinc-400 truncate ${
+                                        convo.lastMessage?.text === t('messages.lastMessagePhoto') || convo.lastMessage?.text === t('messages.lastMessageVideo') ? 'italic' : ''
+                                    }`}>
                                         {convo.lastMessage?.text || '...'}
                                     </p>
                                 </div>

@@ -12,6 +12,12 @@ interface MessagesModalProps {
   initialConversationId: string | null;
 }
 
+const XIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+);
+
 const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialTargetUser, initialConversationId }) => {
     const { t } = useLanguage();
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -88,7 +94,6 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                 <ChatWindow 
                     conversationId={activeConversationId} 
                     onBack={() => setActiveConversationId(null)}
-                    onClose={onClose}
                 />
             );
         }
@@ -132,7 +137,9 @@ const MessagesModal: React.FC<MessagesModalProps> = ({ isOpen, onClose, initialT
                 onClick={e => e.stopPropagation()}
             >
                 {!activeConversationId && (
-                     <button onClick={onClose} className="absolute top-3 right-4 text-3xl font-light leading-none z-10" aria-label={t('messages.close')}>&times;</button>
+                     <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white z-10" aria-label={t('messages.close')}>
+                        <XIcon className="w-6 h-6" />
+                     </button>
                 )}
                 {renderContent()}
             </div>

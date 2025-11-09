@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './common/Header';
 import UserProfile from './profile/UserProfile';
@@ -6,7 +5,7 @@ import Post from './feed/Post';
 import CreatePostModal from './post/CreatePostModal';
 import CreatePulseModal from './pulse/CreatePulseModal';
 import MessagesModal from './messages/MessagesModal';
-import PulseBar from './messages/PulseBar';
+import PulseBar from './feed/PulseBar';
 import PulseViewerModal from './pulse/PulseViewerModal';
 import { auth, db, collection, query, where, getDocs, doc, getDoc, deleteDoc, storage, storageRef, deleteObject } from '../firebase';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,16 +14,7 @@ const Spinner: React.FC = () => (
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-sky-500"></div>
 );
 
-type MusicData = {
-    id: string;
-    name: string;
-    artists: string[];
-    albumImage: string;
-    uri: string;
-    preview_url: string | null;
-};
-
-export type PostType = {
+type PostType = {
     id: string;
     userId: string;
     username: string;
@@ -33,22 +23,24 @@ export type PostType = {
     caption: string;
     likes: string[]; // array of userIds
     timestamp: { seconds: number; nanoseconds: number };
-    music?: MusicData;
-    isVenting?: boolean;
-    allowedViewers?: string[];
-    // For backward compatibility
-    spotifyTrackId?: string;
+    isVentMode?: boolean;
+    allowedUsers?: string[];
+    music?: {
+        title: string;
+        artist: string;
+        url: string;
+        albumArtUrl?: string;
+    };
 };
 
-export type PulseType = {
+type PulseType = {
     id: string;
     mediaUrl: string;
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
-    musica?: MusicData;
-    isVenting?: boolean;
-    allowedViewers?: string[];
+    isVentMode?: boolean;
+    allowedUsers?: string[];
 };
 
 type UserWithPulses = {
@@ -103,71 +95,88 @@ const Feed: React.FC = () => {
         setFeedLoading(true);
         try {
             if (!auth.currentUser) return;
-            const currentUserId = auth.currentUser.uid;
 
-            const followingRef = collection(db, 'users', currentUserId, 'following');
+            const followingRef = collection(db, 'users', auth.currentUser.uid, 'following');
             const followingSnap = await getDocs(followingRef);
             const followingIds = followingSnap.docs.map(doc => doc.id);
-            const publicUserIds = [currentUserId, ...followingIds];
-
-            // --- FETCH POSTS ---
-            const publicPostsPromises = [];
-            for (let i = 0; i < publicUserIds.length; i += 30) {
-                const chunk = publicUserIds.slice(i, i + 30);
-                if (chunk.length > 0) {
-                    const q = query(collection(db, 'posts'), where('userId', 'in', chunk), where('isVenting', '==', false));
-                    publicPostsPromises.push(getDocs(q));
+            const userIdsToQuery = [auth.currentUser.uid, ...followingIds];
+            
+            // 1. Fetch Posts
+            if (userIdsToQuery.length > 0) {
+                const userIdChunks: string[][] = [];
+                for (let i = 0; i < userIdsToQuery.length; i += 30) {
+                    userIdChunks.push(userIdsToQuery.slice(i, i + 30));
                 }
+
+                let allPosts: PostType[] = [];
+                for (const chunk of userIdChunks) {
+                    if (chunk.length === 0) continue;
+                    const postsQuery = query(collection(db, 'posts'), where('userId', 'in', chunk));
+                    const postsSnap = await getDocs(postsQuery);
+                    const posts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostType));
+                    allPosts.push(...posts);
+                }
+
+                allPosts = allPosts.filter(post => {
+                    if (!post.isVentMode) return true; // public post
+                    if (post.userId === auth.currentUser?.uid) return true; // it's my own post
+                    return post.allowedUsers?.includes(auth.currentUser!.uid); // I'm in the allowed list
+                });
+                
+                allPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                setFeedPosts(allPosts.slice(0, 20));
+            } else {
+                setFeedPosts([]);
             }
 
-            const ventingPostsQuery = query(collection(db, 'posts'), where('allowedViewers', 'array-contains', currentUserId));
-            
-            const [publicPostsSnaps, ventingPostsSnap] = await Promise.all([
-                Promise.all(publicPostsPromises),
-                getDocs(ventingPostsQuery)
-            ]);
+            // 2. Fetch Pulses
+            let allPulses: PulseType[] = [];
+            if (userIdsToQuery.length > 0) {
+                // Firestore 'in' queries are limited to 30 elements. Chunk the user IDs to avoid errors.
+                const userIdChunks: string[][] = [];
+                for (let i = 0; i < userIdsToQuery.length; i += 30) {
+                    userIdChunks.push(userIdsToQuery.slice(i, i + 30));
+                }
 
-            const allPostsMap = new Map<string, PostType>();
-            publicPostsSnaps.forEach(snap => snap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as PostType)));
-            ventingPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as PostType));
-            const allPosts = Array.from(allPostsMap.values());
-            allPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-            setFeedPosts(allPosts);
-
-
-            // --- FETCH PULSES ---
-            const publicPulsesPromises = [];
-            for (let i = 0; i < publicUserIds.length; i += 30) {
-                const chunk = publicUserIds.slice(i, i + 30);
-                if (chunk.length > 0) {
-                    const q = query(collection(db, 'pulses'), where('authorId', 'in', chunk), where('isVenting', '==', false));
-                    publicPulsesPromises.push(getDocs(q));
+                for (const chunk of userIdChunks) {
+                    if (chunk.length === 0) continue;
+                    // Query without the time filter to avoid the composite index requirement.
+                    // Filtering will be done on the client side.
+                    const pulsesQuery = query(
+                        collection(db, 'pulses'),
+                        where('authorId', 'in', chunk)
+                    );
+                    const pulsesSnap = await getDocs(pulsesQuery);
+                    const pulses = pulsesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PulseType));
+                    allPulses.push(...pulses);
                 }
             }
             
-            const ventingPulsesQuery = query(collection(db, 'pulses'), where('allowedViewers', 'array-contains', currentUserId));
-            
-            const [publicPulsesSnaps, ventingPulsesSnap] = await Promise.all([
-                Promise.all(publicPulsesPromises),
-                getDocs(ventingPulsesQuery)
-            ]);
-            
-            const allPulsesMap = new Map<string, PulseType>();
-            publicPulsesSnaps.forEach(snap => snap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as PulseType)));
-            ventingPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as PulseType));
-            
-            const allPulses = Array.from(allPulsesMap.values());
+            // Client-side filtering for pulses from the last 24 hours.
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            const recentPulses = allPulses.filter(pulse => new Date((pulse.createdAt?.seconds || 0) * 1000) >= twentyFourHoursAgo);
+            const recentPulses = allPulses.filter(pulse => {
+                if (!pulse.createdAt?.seconds) return false;
+                const pulseDate = new Date(pulse.createdAt.seconds * 1000);
+                return pulseDate >= twentyFourHoursAgo;
+            });
+            
+            const filteredPulses = recentPulses.filter(pulse => {
+                if (!pulse.isVentMode) return true;
+                if (pulse.authorId === auth.currentUser?.uid) return true;
+                return pulse.allowedUsers?.includes(auth.currentUser!.uid);
+            });
 
+
+            // Group pulses by author and collect unique author IDs
             const pulsesByAuthorId: { [key: string]: PulseType[] } = {};
             const authorIds = new Set<string>();
-            recentPulses.forEach(pulse => {
+            filteredPulses.forEach(pulse => {
                 if (!pulsesByAuthorId[pulse.authorId]) pulsesByAuthorId[pulse.authorId] = [];
                 pulsesByAuthorId[pulse.authorId].push(pulse);
                 authorIds.add(pulse.authorId);
             });
 
+            // Fetch author info
             const authorInfoMap = new Map<string, { username: string, avatar: string }>();
             if (authorIds.size > 0) {
                 for (const id of Array.from(authorIds)) {
@@ -179,6 +188,7 @@ const Feed: React.FC = () => {
                 }
             }
             
+            // Combine author info with grouped pulses
             const finalGroupedPulses = new Map<string, UserWithPulses>();
             for (const [authorId, pulses] of Object.entries(pulsesByAuthorId)) {
                 const author = authorInfoMap.get(authorId);
@@ -232,12 +242,12 @@ const Feed: React.FC = () => {
   const handlePulseDeleted = async (pulseToDelete: PulseType) => {
     try {
         const pulseRef = doc(db, 'pulses', pulseToDelete.id);
-        const mediaPath = decodeURIComponent(pulseToDelete.mediaUrl.split('/o/')[1].split('?')[0]);
-        const mediaRef = storageRef(storage, mediaPath);
+        const mediaRef = storageRef(storage, pulseToDelete.mediaUrl);
         
         await deleteDoc(pulseRef);
         await deleteObject(mediaRef);
         
+        // FIX: Explicitly type the 'prev' parameter to 'UserWithPulses | null' to resolve TypeScript inference issues.
         setViewingUserWithPulses((prev: UserWithPulses | null) => {
             if (!prev) return null;
             const updatedPulses = prev.pulses.filter(p => p.id !== pulseToDelete.id);
@@ -245,6 +255,7 @@ const Feed: React.FC = () => {
             return { ...prev, pulses: updatedPulses };
         });
         
+        // FIX: Explicitly type the 'prevMap' parameter to resolve TypeScript inference issues.
         setPulsesByAuthor((prevMap: Map<string, UserWithPulses>) => {
             const newMap = new Map(prevMap);
             const authorData = newMap.get(pulseToDelete.authorId);
@@ -253,6 +264,7 @@ const Feed: React.FC = () => {
                 if (updatedPulses.length === 0) {
                     newMap.delete(pulseToDelete.authorId);
                 } else {
+                    // FIX: Reconstruct object to avoid spread operator issue with inferred types.
                     newMap.set(pulseToDelete.authorId, { author: authorData.author, pulses: updatedPulses });
                 }
             }

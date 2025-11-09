@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Button from '../common/Button';
-import TextInput from '../../locales/TextInput';
+import TextInput from '../common/TextInput';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
 

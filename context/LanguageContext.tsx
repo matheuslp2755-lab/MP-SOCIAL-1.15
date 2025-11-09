@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext } from 'react';
 
 // The content of locales/pt.json is embedded here to fix module loading issues.
@@ -129,16 +128,13 @@ const messages = {
     "captionLabel": "Escreva uma legenda...",
     "dragPhotos": "Arraste as fotos aqui",
     "selectFromComputer": "Selecionar do computador",
-    "addMusic": "Adicionar música"
-  },
-  "musicSearch": {
-    "placeholder": "Buscar uma música...",
-    "searching": "Buscando...",
-    "noResults": "Nenhum resultado encontrado.",
-    "apiError": "Não foi possível carregar músicas agora.",
-    "connectSpotifyMessage": "Para buscar músicas, conecte-se ao Spotify.",
-    "connectSpotifyButton": "Conectar com Spotify",
-    "selectButton": "Selecionar"
+    "ventMode": "Modo Desabafo",
+    "ventModeInfo": "Apenas seguidores selecionados verão esta publicação.",
+    "searchFollowers": "Pesquisar seguidores...",
+    "noFollowersFound": "Nenhum seguidor encontrado.",
+    "selectAll": "Selecionar Todos",
+    "deselectAll": "Desmarcar Todos",
+    "selectedCount": "{count} selecionados"
   },
   "messages": {
     "title": "Mensagens",
@@ -157,11 +153,7 @@ const messages = {
     "deleteTitle": "Excluir Mensagem?",
     "deleteBody": "Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
     "newMessageTitle": "Nova Mensagem",
-    "searchUsers": "Procurar usuários...",
-    "videoTooLong": "O vídeo não pode ter mais de 30 segundos.",
-    "uploadError": "Falha ao enviar a mídia. Por favor, tente novamente.",
-    "photo": "Imagem",
-    "video": "Vídeo"
+    "searchUsers": "Procurar usuários..."
   },
   "crystal": {
     "formed": "💎 Um novo Cristal de Conexão foi formado!",
@@ -184,7 +176,8 @@ const messages = {
     "selectFromComputer": "Selecionar do computador",
     "invalidFileError": "Por favor, selecione um arquivo de imagem ou vídeo válido.",
     "publishError": "Falha ao criar o pulso. Por favor, tente novamente.",
-    "addMusic": "Adicionar música"
+    "ventMode": "Modo Desabafo",
+    "ventModeInfo": "Apenas seguidores selecionados verão este pulso."
   },
   "pulseViewer": {
     "previous": "Pulso anterior",
@@ -202,16 +195,6 @@ const messages = {
   },
   "welcome": {
     "title": "Bem vindo ao Mundo MP 1.15"
-  },
-  "ventingMode": {
-    "title": "Modo Desabafo",
-    "description": "Apenas seguidores selecionados poderão ver esta publicação.",
-    "selectAudience": "Selecionar Público",
-    "audienceButton": "Selecionar quem pode ver",
-    "audienceSelected": "{count} pessoas selecionadas",
-    "done": "Concluir",
-    "searchFollowers": "Pesquisar seguidores...",
-    "noFollowersFound": "Nenhum seguidor encontrado."
   },
   "footer": {
     "language": "Português (Brasil)",

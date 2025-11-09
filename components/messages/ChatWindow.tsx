@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     auth, 
@@ -18,7 +17,7 @@ import {
     storage,
     storageRef,
     uploadBytes,
-    getDownloadURL,
+    getDownloadURL
 } from '../../firebase';
 import ConnectionCrystal from './ConnectionCrystal';
 import OnlineIndicator from '../common/OnlineIndicator';
@@ -27,7 +26,6 @@ import { useLanguage } from '../../context/LanguageContext';
 interface ChatWindowProps {
     conversationId: string | null;
     onBack: () => void;
-    onClose: () => void;
 }
 
 interface Message {
@@ -35,14 +33,16 @@ interface Message {
     senderId: string;
     text: string;
     timestamp: any;
+    mediaUrl?: string;
+    mediaType?: 'image' | 'video';
     replyTo?: {
         messageId: string;
         senderId: string;
         senderUsername: string;
         text: string;
+        mediaUrl?: string;
+        mediaType?: 'image' | 'video';
     };
-    mediaUrl?: string;
-    mediaType?: 'image' | 'video';
 }
 
 interface OtherUser {
@@ -98,13 +98,14 @@ const BackArrowIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
 );
 
-const ImageIcon: React.FC<{className?: string}> = ({ className }) => (
+const AttachmentIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.122 2.122l7.81-7.81" />
     </svg>
 );
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose }) => {
+
+const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack }) => {
     const { t } = useLanguage();
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -115,11 +116,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ open: boolean, messageId: string | null }>({ open: false, messageId: null });
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-    const [mediaFile, setMediaFile] = useState<File | null>(null);
-    const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-    const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+    
+    const [mediaToSend, setMediaToSend] = useState<File | null>(null);
+    const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [mediaError, setMediaError] = useState<string | null>(null);
+    const [mediaError, setMediaError] = useState('');
     
     type AnimationState = 'idle' | 'forming' | 'settling';
     const [animationState, setAnimationState] = useState<AnimationState>('idle');
@@ -177,7 +178,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                 clearTimeout(settlingTimer);
             };
         }
-    }, [crystalData, prevCrystalData, t]);
+    }, [crystalData, prevCrystalData]);
 
     useEffect(() => {
         if (!conversationId || !currentUser) {
@@ -275,78 +276,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                 unsubUserStatusRef.current = null;
             }
         };
-    }, [conversationId, currentUser, t]);
-
-    const clearMediaSelection = () => {
-        setMediaFile(null);
-        setMediaPreview(null);
-        setMediaType(null);
-        setMediaError(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        clearMediaSelection();
-
-        if (file.type.startsWith('video/')) {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
-            video.onloadedmetadata = () => {
-                window.URL.revokeObjectURL(video.src);
-                if (video.duration > 30) {
-                    setMediaError(t('messages.videoTooLong'));
-                } else {
-                    setMediaType('video');
-                    setMediaFile(file);
-                    setMediaPreview(URL.createObjectURL(file));
-                }
-            };
-            video.src = URL.createObjectURL(file);
-        } else if (file.type.startsWith('image/')) {
-            setMediaType('image');
-            setMediaFile(file);
-            setMediaPreview(URL.createObjectURL(file));
-        }
-    };
+    }, [conversationId, currentUser]);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if ((!newMessage.trim() && !mediaFile) || isUploading || !currentUser || !conversationId || !otherUser) return;
-
-        setIsUploading(true);
+        if (newMessage.trim() === '' || !currentUser || !conversationId || !otherUser) return;
 
         const tempMessage = newMessage;
         const tempReplyingTo = replyingTo;
-        const tempMediaFile = mediaFile;
-        const tempMediaType = mediaType;
-        
         setNewMessage('');
         setReplyingTo(null);
-        clearMediaSelection();
 
-        let downloadURL: string | undefined;
+        const conversationRef = doc(db, 'conversations', conversationId);
+        const messagesRef = collection(conversationRef, 'messages');
+        const recipientNotificationRef = doc(collection(db, 'users', otherUser.id, 'notifications'));
 
         try {
-            if (tempMediaFile && tempMediaType) {
-                const filePath = `conversations/${conversationId}/${Date.now()}-${tempMediaFile.name}`;
-                const fileRef = storageRef(storage, filePath);
-                await uploadBytes(fileRef, tempMediaFile);
-                downloadURL = await getDownloadURL(fileRef);
-            }
-
-            if (!tempMessage.trim() && !downloadURL) {
-                throw new Error("Nothing to send");
-            }
-
-            const conversationRef = doc(db, 'conversations', conversationId);
-            const messagesRef = collection(conversationRef, 'messages');
-            const recipientNotificationRef = doc(collection(db, 'users', otherUser.id, 'notifications'));
-
             const conversationSnap = await getDoc(conversationRef);
             const currentData = conversationSnap.data();
             
@@ -383,6 +328,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
             };
             
             const batch = writeBatch(db);
+            
             const newMessageRef = doc(messagesRef);
             
             const newMessageData: any = {
@@ -399,28 +345,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                         ? (currentUser.displayName || t('common.you'))
                         : (otherUser?.username || t('common.user')),
                     text: tempReplyingTo.text,
+                    mediaUrl: tempReplyingTo.mediaUrl,
+                    mediaType: tempReplyingTo.mediaType,
                 };
-            }
-
-            if (downloadURL && tempMediaType) {
-                newMessageData.mediaUrl = downloadURL;
-                newMessageData.mediaType = tempMediaType;
             }
 
             batch.set(newMessageRef, newMessageData);
 
-            let lastMessageText = tempMessage;
-            if (downloadURL) {
-                if (tempMediaType === 'image') {
-                    lastMessageText = tempMessage ? `📷 ${tempMessage}` : t('messages.photo');
-                } else {
-                    lastMessageText = tempMessage ? `📹 ${tempMessage}` : t('messages.video');
-                }
-            }
-
             batch.update(conversationRef, {
                 lastMessage: {
-                    text: lastMessageText,
+                    text: tempMessage,
                     senderId: currentUser.uid,
                     timestamp: serverTimestamp(),
                 },
@@ -442,14 +376,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
 
         } catch (error) {
             console.error("Error sending message:", error);
-            setMediaError(t('messages.uploadError'));
-            setNewMessage(tempMessage); // Restore state on failure
+            setNewMessage(tempMessage);
             setReplyingTo(tempReplyingTo);
-            setMediaFile(tempMediaFile);
-            setMediaType(tempMediaType);
-            if(tempMediaFile) setMediaPreview(URL.createObjectURL(tempMediaFile));
-        } finally {
-            setIsUploading(false);
         }
     };
     
@@ -485,6 +413,121 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
 
         } catch (error) {
             console.error("Error deleting message:", error);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setMediaError('');
+            setMediaToSend(file);
+            setMediaPreviewUrl(URL.createObjectURL(file));
+            e.target.value = ''; // Allow selecting the same file again
+        }
+    };
+
+    const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+        if (e.currentTarget.duration > 30) {
+            setMediaError(t('messages.videoTooLongError'));
+        }
+    };
+
+    const cancelMediaSend = () => {
+        if (mediaPreviewUrl) {
+            URL.revokeObjectURL(mediaPreviewUrl);
+        }
+        setMediaToSend(null);
+        setMediaPreviewUrl(null);
+        setMediaError('');
+    };
+    
+    const handleSendMedia = async () => {
+        if (!mediaToSend || !currentUser || !conversationId || !otherUser || mediaError) return;
+    
+        setIsUploading(true);
+        setMediaError('');
+    
+        try {
+            const mediaUploadRef = storageRef(storage, `chat_media/${conversationId}/${Date.now()}-${mediaToSend.name}`);
+            await uploadBytes(mediaUploadRef, mediaToSend);
+            const downloadURL = await getDownloadURL(mediaUploadRef);
+            
+            const conversationRef = doc(db, 'conversations', conversationId);
+            const messagesRef = collection(conversationRef, 'messages');
+            const recipientNotificationRef = doc(collection(db, 'users', otherUser.id, 'notifications'));
+    
+            const conversationSnap = await getDoc(conversationRef);
+            const currentData = conversationSnap.data();
+            
+            let newStreak = 1;
+            if (currentData?.crystal?.lastInteractionAt) {
+                const lastInteractionDate = currentData.crystal.lastInteractionAt.toDate();
+                const isYesterday = (d: Date) => {
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    return d.getFullYear() === yesterday.getFullYear() && d.getMonth() === yesterday.getMonth() && d.getDate() === yesterday.getDate();
+                };
+                const isToday = (d: Date) => {
+                    const today = new Date();
+                    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+                };
+                if (isYesterday(lastInteractionDate)) {
+                    newStreak = (currentData.crystal.streak || 0) + 1;
+                } else if (isToday(lastInteractionDate)) {
+                    newStreak = currentData.crystal.streak || 1;
+                }
+            }
+    
+            const crystalUpdate = {
+                crystal: {
+                    createdAt: currentData?.crystal?.createdAt || serverTimestamp(),
+                    lastInteractionAt: serverTimestamp(),
+                    level: 'BRILHANTE',
+                    streak: newStreak,
+                }
+            };
+            
+            const batch = writeBatch(db);
+            const newMessageRef = doc(messagesRef);
+            const mediaType = mediaToSend.type.startsWith('image') ? 'image' : 'video';
+            
+            batch.set(newMessageRef, {
+                senderId: currentUser.uid,
+                text: '',
+                timestamp: serverTimestamp(),
+                mediaUrl: downloadURL,
+                mediaType: mediaType,
+            });
+    
+            batch.update(conversationRef, {
+                lastMessage: {
+                    text: mediaType === 'image' ? t('messages.lastMessagePhoto') : t('messages.lastMessageVideo'),
+                    senderId: currentUser.uid,
+                    timestamp: serverTimestamp(),
+                },
+                timestamp: serverTimestamp(),
+                ...crystalUpdate,
+            });
+    
+            batch.set(recipientNotificationRef, {
+                type: 'message',
+                fromUserId: currentUser.uid,
+                fromUsername: currentUser.displayName,
+                fromUserAvatar: currentUser.photoURL,
+                conversationId: conversationId,
+                timestamp: serverTimestamp(),
+                read: false,
+            });
+            
+            await batch.commit();
+    
+            cancelMediaSend();
+        } catch (error) {
+            console.error("Error sending media:", error);
+            setMediaError(t('messages.uploadError'));
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -551,37 +594,49 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                             </div>
                         )}
                     </div>
-                    <button onClick={onClose} className="text-3xl font-light leading-none" aria-label={t('messages.close')}>&times;</button>
                 </header>
             )}
             <div className="flex-grow py-4 px-2 overflow-y-auto">
                 <div className="flex flex-col gap-1">
                     {messages.map(msg => (
                         <div key={msg.id} className={`flex items-end group gap-2 ${msg.senderId === currentUser?.uid ? 'self-end flex-row-reverse' : 'self-start'}`}>
-                            <div className={`max-w-xs md:max-w-md lg:max-w-lg rounded-2xl overflow-hidden ${
+                            <div className={`max-w-xs md:max-w-md lg:max-w-lg rounded-2xl ${
                                 msg.senderId === currentUser?.uid 
-                                ? 'bg-sky-500 text-white' 
-                                : 'bg-zinc-200 dark:bg-zinc-800'
-                            }`}>
+                                ? 'bg-sky-500 text-white rounded-br-none' 
+                                : 'bg-zinc-200 dark:bg-zinc-800 rounded-bl-none'
+                            } ${msg.mediaUrl ? 'p-1' : ''}`}>
                                 {msg.replyTo && (
-                                    <div className={`p-2 mx-3 mt-2 rounded-lg truncate ${
+                                    <div className={`p-2 mx-2 mt-2 rounded-lg truncate ${
                                         msg.senderId === currentUser?.uid
                                         ? 'bg-sky-400 border-l-2 border-sky-200'
                                         : 'bg-zinc-300 dark:bg-zinc-700 border-l-2 border-zinc-400 dark:border-zinc-500'
                                     }`}>
                                         <p className="font-semibold text-xs">{msg.replyTo.senderUsername}</p>
-                                        <p className="text-sm opacity-90">{msg.replyTo.text}</p>
+                                        {msg.replyTo.mediaUrl ? (
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {msg.replyTo.mediaType === 'image' 
+                                                    ? <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14" /></svg>
+                                                    : <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                }
+                                                <p className="text-sm opacity-90 italic">
+                                                    {msg.replyTo.mediaType === 'image' ? t('messages.lastMessagePhoto') : t('messages.lastMessageVideo')}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm opacity-90 truncate">{msg.replyTo.text}</p>
+                                        )}
                                     </div>
                                 )}
-                                {msg.mediaUrl && (
-                                    msg.mediaType === 'image' ? (
-                                        <img src={msg.mediaUrl} alt="Media content" className="block w-full h-auto cursor-pointer" onClick={() => window.open(msg.mediaUrl, '_blank')} />
+                                {msg.mediaUrl ? (
+                                    <div className="max-w-[250px] cursor-pointer" onClick={() => window.open(msg.mediaUrl, '_blank')}>
+                                    {msg.mediaType === 'image' ? (
+                                        <img src={msg.mediaUrl} alt="Sent media" className="rounded-xl w-full" />
                                     ) : (
-                                        <video src={msg.mediaUrl} controls className="block w-full h-auto bg-black" />
-                                    )
-                                )}
-                                {msg.text && (
-                                    <p className="text-sm break-words px-3 py-2">{msg.text}</p>
+                                        <video src={msg.mediaUrl} controls className="rounded-xl w-full"></video>
+                                    )}
+                                    </div>
+                                ) : (
+                                     <p className="text-sm break-words px-4 py-2">{msg.text}</p>
                                 )}
                             </div>
                     
@@ -614,54 +669,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                 </div>
             </div>
             <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex-shrink-0">
-                {(mediaPreview || replyingTo || mediaError) && (
+                {replyingTo && currentUser && (
                     <div className="bg-zinc-100 dark:bg-zinc-900 p-2 rounded-t-lg mb-[-8px] border-l-4 border-sky-500 relative mx-1">
-                        {replyingTo && currentUser && (
-                             <div className="flex justify-between items-center">
-                                <p className="text-xs font-semibold text-sky-500">
-                                    {replyingTo.senderId === currentUser.uid
-                                        ? t('messages.replyingToSelf')
-                                        : t('messages.replyingToOther', { username: otherUser?.username || '...' })}
-                                </p>
-                                 <button onClick={() => setReplyingTo(null)} className="p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                </button>
-                            </div>
-                        )}
-                        {replyingTo && <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">{replyingTo.text}</p>}
-
-                        {mediaPreview && (
-                             <div className="flex items-start gap-2 mt-2">
-                                {mediaType === 'image' ? 
-                                    <img src={mediaPreview} alt="Preview" className="w-12 h-12 rounded object-cover"/> :
-                                    <video src={mediaPreview} className="w-12 h-12 rounded object-cover bg-black" />
-                                }
-                                <div className="flex-grow">
-                                    <p className="text-xs text-zinc-500">{mediaFile?.name}</p>
-                                </div>
-                                <button onClick={clearMediaSelection} className="p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 self-start">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                </button>
-                            </div>
-                        )}
-                         {mediaError && <p className="text-red-500 text-xs mt-1">{mediaError}</p>}
+                        <div className="flex justify-between items-center">
+                            <p className="text-xs font-semibold text-sky-500">
+                                {replyingTo.senderId === currentUser.uid
+                                    ? t('messages.replyingToSelf')
+                                    : t('messages.replyingToOther', { username: otherUser?.username || '...' })}
+                            </p>
+                             <button onClick={() => setReplyingTo(null)} className="p-1 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                            {replyingTo.text}
+                        </p>
                     </div>
                 )}
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,video/mp4,video/quicktime,video/webm" />
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700" disabled={isUploading}>
-                        <ImageIcon className="w-6 h-6 text-zinc-600 dark:text-zinc-300"/>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                        <AttachmentIcon className="w-6 h-6 text-zinc-600 dark:text-zinc-300"/>
                     </button>
+                    <input type="file" ref={fileInputRef} hidden onChange={handleFileSelect} accept="image/*,video/*" />
                      <input 
                         ref={inputRef}
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder={t('messages.messagePlaceholder')}
-                        className={`w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 py-2 pl-4 pr-4 text-sm focus:outline-none focus:border-sky-500 ${(replyingTo || mediaPreview || mediaError) ? 'rounded-b-full rounded-t-none' : 'rounded-full'}`}
+                        className={`w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 py-2 pl-4 pr-4 text-sm focus:outline-none focus:border-sky-500 ${replyingTo ? 'rounded-b-full rounded-t-none' : 'rounded-full'}`}
                     />
-                    <button type="submit" disabled={(!newMessage.trim() && !mediaFile) || isUploading} className="text-sky-500 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed px-2">
-                        {isUploading ? '...' : t('messages.send')}
+                    <button type="submit" disabled={!newMessage.trim()} className="text-sky-500 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed px-2">
+                        {t('messages.send')}
                     </button>
                 </form>
             </div>
@@ -688,6 +727,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onBack, onClose
                                 className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
                             >
                                 {t('common.delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+             {mediaToSend && mediaPreviewUrl && (
+                <div className="absolute inset-0 bg-black/80 flex flex-col justify-center items-center z-20 p-4">
+                    <div className="relative w-full max-w-lg bg-white dark:bg-black rounded-lg p-4 flex flex-col items-center gap-4">
+                        {mediaToSend.type.startsWith('image') ? (
+                            <img src={mediaPreviewUrl} alt="Preview" className="max-h-80 w-auto rounded-lg" />
+                        ) : (
+                            <video src={mediaPreviewUrl} controls onLoadedMetadata={handleVideoMetadata} className="max-h-80 w-auto rounded-lg" />
+                        )}
+                        {mediaError && <p className="text-red-500 text-sm">{mediaError}</p>}
+                        <div className="flex items-center justify-end gap-2 w-full">
+                             <button onClick={cancelMediaSend} className="px-4 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 font-semibold">
+                                {t('common.cancel')}
+                            </button>
+                            <button
+                                onClick={handleSendMedia}
+                                disabled={!!mediaError || isUploading}
+                                className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-semibold disabled:opacity-50"
+                            >
+                                {isUploading ? t('messages.sending') : t('messages.send')}
                             </button>
                         </div>
                     </div>

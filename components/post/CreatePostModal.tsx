@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
     auth,
@@ -11,14 +10,14 @@ import {
     uploadBytes,
     getDownloadURL,
     doc,
-    getDoc
+    getDoc,
+    getDocs
 } from '../../firebase';
 import Button from '../common/Button';
 import TextAreaInput from '../common/TextAreaInput';
 import { useLanguage } from '../../context/LanguageContext';
-import MusicSearchModal from '../common/MusicSearch';
-import { SpotifyTrack, getAccessToken, redirectToAuth } from '../common/spotifyApi';
-import FollowerSelectionModal from '../common/FollowerSelectionModal';
+import MusicSelectorModal, { MusicTrack } from './MusicSelectorModal';
+
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -26,9 +25,22 @@ interface CreatePostModalProps {
   onPostCreated: () => void;
 }
 
+type Follower = {
+    id: string;
+    username: string;
+    avatar: string;
+};
+
 const ImageUploadIcon: React.FC = () => (
     <svg aria-label="Icon to represent media such as images or videos" className="w-24 h-24 text-zinc-800 dark:text-zinc-200" fill="currentColor" role="img" viewBox="0 0 97.6 77.3"><path d="M16.3 24h.3c2.8-.2 4.9-2.6 4.8-5.4A4.9 4.9 0 0 0 16 13.6c-2.8.2-4.9 2.6-4.8 5.4.1 2.7 2.4 4.8 5.1 5zM42.4 28.9c-2.8.2-5.4-2-5.6-4.8-.2-2.8 2-5.4 4.8-5.6 2.8-.2 5.4 2 5.6 4.8.2 2.8-2 5.4-4.8 5.6z" fill="currentColor"></path><path d="M84.7 18.4 58 16.9l-.2-3.2c-.3-5.7-5.2-10.1-11-9.8L12.9 6c-5.7.3-10.1 5.2-9.8 11L5 51.1v.8c.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4l-14.4 1.1c-1.2.1-2.2-1-2.1-2.2l-.2-3.2 14.5-1.2c5.7-.3 10.1-5.2 9.8-11L51 15.1l18.7 1.4c1.2.1 2.2 1 2.1 2.2l.2 3.2-18.7-1.4c-5.7.3-10.1 5.2-9.8 11l-1.9 24.7c.1 1.2 1 2.2 2.2 2.1l14.4-1.1v9.4l-24.7 1.9c-5.7-.3-10.1-5.2-9.8-11L18.4 25.6v-.8c-.3-5.7 5.2-10.1 11-9.8l24.7 1.9v9.4l14.4-1.1c1.2-.1 2.2 1 2.1 2.2l.2 3.2-14.5 1.2c-5.7.3-10.1 5.2-9.8 11L49 60.3l-18.7-1.4c-1.2-.1-2.2-1-2.1-2.2l-.2-3.2 18.7 1.4c5.7-.3 10.1-5.2 9.8-11l1.9-24.7c-.1-1.2-1-2.2-2.2-2.1L31.2 20.1v-9.4l24.7-1.9c5.7.3 10.1 5.2 9.8 11l-2.1 28.9.2.6c.3 5.7-5.2 10.1-11 9.8L31.2 68.1v.8c.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4l-14.4 1.1c-1.2.1-2.2-1-2.1-2.2l-.2-3.2 14.5-1.2c5.7-.3 10.1-5.2 9.8-11L72.2 19l14.5-1.2c1.2-.1 2.2 1 2.1 2.2l-.2 3.2-14.5 1.2c-5.7.3-10.1 5.2-9.8 11l-1.9 24.7c.1 1.2 1 2.2 2.2 2.1l14.4-1.1v9.4l-24.7 1.9c-5.7-.3-10.1-5.2-9.8-11l2.1-28.9-.2-.6c-.3-5.7 5.2-10.1 11-9.8l21.5 1.7 2.1-28.9c-.3-5.7-5.2-10.1-11-9.8L21.5 4.9v.8c-.3 5.7 5.2 10.1 11 9.8l24.7-1.9v-9.4L31.2 6C25.5 5.7 21.1.8 21.4-5l2.1-28.9c.3-5.7 5.2-10.1 11-9.8l42.2-3.2c5.7-.3 10.1 5.2 9.8 11z" fill="currentColor"></path></svg>
 );
+
+const MusicIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V7.5A2.25 2.25 0 0013.5 6h-3a2.25 2.25 0 00-2.25 2.25v1.5m0 12.153V15m0 0a2.453 2.453 0 01-1.086.207l-2.16-.62a2.25 2.25 0 01-1.632-2.163V7.5a2.25 2.25 0 012.25-2.25h3.879a2.25 2.25 0 012.25 2.25v9.473a2.453 2.453 0 01-1.086.207l-2.16.62a2.25 2.25 0 00-1.632 2.163v1.947z" />
+    </svg>
+);
+
 
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPostCreated }) => {
@@ -37,56 +49,50 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
     const [caption, setCaption] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [selectedMusic, setSelectedMusic] = useState<SpotifyTrack | null>(null);
-    const [showMusicSearch, setShowMusicSearch] = useState(false);
-    const [isSpotifyConnected, setIsSpotifyConnected] = useState<boolean | null>(null);
-    const [isVenting, setIsVenting] = useState(false);
-    const [allowedViewers, setAllowedViewers] = useState<string[]>([]);
-    const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
+    const [isVentMode, setIsVentMode] = useState(false);
+    const [allowedUsers, setAllowedUsers] = useState<string[]>([]);
+    const [followers, setFollowers] = useState<Follower[]>([]);
+    const [followerSearch, setFollowerSearch] = useState('');
+    const [loadingFollowers, setLoadingFollowers] = useState(false);
+    const [isMusicSelectorOpen, setIsMusicSelectorOpen] = useState(false);
+    const [selectedMusic, setSelectedMusic] = useState<MusicTrack | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useLanguage();
 
     useEffect(() => {
-        if (isOpen) {
-             // Restore draft if it exists
-            const draftString = localStorage.getItem('spotify_auth_draft');
-            if (draftString) {
-                const draft = JSON.parse(draftString);
-                if (draft.type === 'post') {
-                    setCaption(draft.caption || '');
-                    setIsVenting(draft.isVenting || false);
-                    setAllowedViewers(draft.allowedViewers || []);
-                    setSelectedMusic(draft.selectedMusic || null);
-                    if (draft.imageDataUrl) {
-                        fetch(draft.imageDataUrl)
-                            .then(res => res.blob())
-                            .then(blob => {
-                                const file = new File([blob], draft.imageName, { type: draft.imageType });
-                                setImageFile(file);
-                                setImagePreview(URL.createObjectURL(file));
-                            });
-                    }
-                    localStorage.removeItem('spotify_auth_draft');
-                }
-            }
-
-            const checkSpotifyAuth = async () => {
-                const token = await getAccessToken();
-                setIsSpotifyConnected(!!token);
-            };
-            checkSpotifyAuth();
-        } else {
+        if (!isOpen) {
             setImageFile(null);
             setImagePreview(null);
             setCaption('');
             setError('');
+            setIsVentMode(false);
+            setAllowedUsers([]);
+            setFollowers([]);
+            setFollowerSearch('');
             setSelectedMusic(null);
-            setShowMusicSearch(false);
-            setIsSpotifyConnected(null);
-            setIsVenting(false);
-            setAllowedViewers([]);
         }
     }, [isOpen]);
+    
+    useEffect(() => {
+        if (isOpen && isVentMode && followers.length === 0) {
+            const fetchFollowers = async () => {
+                if (!auth.currentUser) return;
+                setLoadingFollowers(true);
+                try {
+                    const followingRef = collection(db, 'users', auth.currentUser.uid, 'following');
+                    const snapshot = await getDocs(followingRef);
+                    const followersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Follower));
+                    setFollowers(followersData);
+                } catch (error) {
+                    console.error("Error fetching followers:", error);
+                } finally {
+                    setLoadingFollowers(false);
+                }
+            };
+            fetchFollowers();
+        }
+    }, [isOpen, isVentMode, followers.length]);
 
     if (!isOpen) return null;
 
@@ -103,38 +109,15 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
         fileInputRef.current?.click();
     };
 
-    const handleSelectMusic = (track: SpotifyTrack) => {
-        console.log("Botão Selecionar clicado");
-        console.log("Música selecionada:", track);
-        setSelectedMusic(track);
-        setShowMusicSearch(false);
+    const handleAllowedUserToggle = (userId: string) => {
+        setAllowedUsers(prev => 
+            prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+        );
     };
-    
-    const handleConnectSpotify = () => {
-        const saveDraft = (imageDataUrl?: string) => {
-            const draft = {
-                type: 'post',
-                imageDataUrl: imageDataUrl,
-                imageType: imageFile?.type,
-                imageName: imageFile?.name,
-                caption: caption,
-                isVenting: isVenting,
-                allowedViewers: allowedViewers,
-                selectedMusic: selectedMusic,
-            };
-            localStorage.setItem('spotify_auth_draft', JSON.stringify(draft));
-            redirectToAuth();
-        };
-    
-        if (imageFile) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                saveDraft(reader.result as string);
-            };
-            reader.readAsDataURL(imageFile);
-        } else {
-            saveDraft();
-        }
+
+    const handleMusicSelect = (track: MusicTrack) => {
+        setSelectedMusic(track);
+        setIsMusicSelectorOpen(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -156,7 +139,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
             await uploadBytes(imageUploadRef, imageFile);
             const downloadURL = await getDownloadURL(imageUploadRef);
 
-            const postData: any = {
+            const postData: { [key: string]: any } = {
                 userId: currentUser.uid,
                 username: userData.username,
                 userAvatar: userData.avatar,
@@ -164,24 +147,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 caption,
                 likes: [],
                 timestamp: serverTimestamp(),
-                isVenting: isVenting,
             };
+
+            if (isVentMode) {
+                postData.isVentMode = true;
+                postData.allowedUsers = [...new Set([currentUser.uid, ...allowedUsers])];
+            }
 
             if (selectedMusic) {
                 postData.music = {
-                    id: selectedMusic.id,
-                    name: selectedMusic.name,
-                    artists: selectedMusic.artists.map(a => a.name),
-                    albumImage: selectedMusic.album.images?.[0]?.url || '',
-                    uri: selectedMusic.uri,
-                    preview_url: selectedMusic.preview_url,
+                    title: selectedMusic.title,
+                    artist: selectedMusic.artist,
+                    url: selectedMusic.url,
+                    albumArtUrl: selectedMusic.albumArtUrl,
                 };
-            }
-
-            if (isVenting) {
-                // Ensure the author can always see their own post.
-                const viewers = [...new Set([...allowedViewers, currentUser.uid])];
-                postData.allowedViewers = viewers;
             }
 
             await addDoc(collection(db, 'posts'), postData);
@@ -196,6 +175,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
         }
     };
 
+    const filteredFollowers = followers.filter(f => f.username.toLowerCase().includes(followerSearch.toLowerCase()));
 
     return (
         <>
@@ -204,24 +184,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                 onClick={onClose}
             >
                 <div 
-                    className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-lg border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh]"
+                    className="bg-white dark:bg-black rounded-lg shadow-xl w-full max-w-4xl border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh]"
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
                         <h2 className="text-lg font-semibold">{t('createPost.title')}</h2>
                         {imagePreview && (
-                            <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
-                                {submitting ? t('createPost.sharing') : t('createPost.share')}
+                             <Button onClick={handleSubmit} disabled={submitting} className="!w-auto !py-0 !px-3 !text-sm">
+                                {t('createPost.share')}
                             </Button>
                         )}
                     </div>
                     <div className="flex-grow overflow-y-auto">
                         {imagePreview ? (
                             <div className="flex flex-col md:flex-row">
-                                <div className="w-full md:w-1/2 aspect-square">
-                                    <img src={imagePreview} alt="Post preview" className="w-full h-full object-cover" />
+                                <div className="w-full md:w-1/2 aspect-square bg-black flex items-center justify-center">
+                                    <img src={imagePreview} alt="Post preview" className="max-h-full max-w-full object-contain" />
                                 </div>
-                                <div className="w-full md:w-1/2 p-4">
+                                <div className="w-full md:w-1/2 p-4 flex flex-col">
                                     <div className="flex items-center mb-4">
                                         <img src={auth.currentUser?.photoURL || ''} alt={auth.currentUser?.displayName || 'User'} className="w-8 h-8 rounded-full object-cover"/>
                                         <p className="font-semibold text-sm ml-3">{auth.currentUser?.displayName}</p>
@@ -231,66 +211,85 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                                         label={t('createPost.captionLabel')}
                                         value={caption}
                                         onChange={(e) => setCaption(e.target.value)}
-                                        className="!min-h-[150px]"
+                                        className="!min-h-[100px]"
                                     />
-                                    <div className="flex items-center justify-between w-full mt-4">
-                                        <div>
-                                            <label htmlFor="venting-mode-post" className="font-semibold text-sm">{t('ventingMode.title')}</label>
-                                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('ventingMode.description')}</p>
-                                        </div>
-                                        <label htmlFor="venting-mode-post" className="relative inline-flex items-center cursor-pointer">
-                                            <input 
-                                                type="checkbox" 
-                                                id="venting-mode-post" 
-                                                className="sr-only peer"
-                                                checked={isVenting}
-                                                onChange={() => setIsVenting(!isVenting)}
-                                            />
-                                            <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
-                                        </label>
-                                    </div>
 
-                                    {isVenting && (
-                                        <button type="button" onClick={() => setIsFollowerModalOpen(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1 text-left">
-                                            {allowedViewers.length > 0 ? t('ventingMode.audienceSelected', { count: allowedViewers.length }) : t('ventingMode.audienceButton')}
-                                        </button>
-                                    )}
-
-                                    {isSpotifyConnected === null ? (
-                                        <div className="h-8 mt-2" /> // Placeholder to prevent layout shift
-                                    ) : isSpotifyConnected ? (
-                                        <>
-                                            {selectedMusic ? (
-                                                <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-2 rounded-md mt-2">
-                                                    <div className="flex items-center gap-3 overflow-hidden">
-                                                        <img src={selectedMusic.album.images?.[0]?.url} alt={selectedMusic.name} className="w-10 h-10 rounded-sm object-cover flex-shrink-0" />
-                                                        <div className="text-sm">
-                                                            <p className="font-semibold truncate">{selectedMusic.name}</p>
-                                                            <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artists.map(a => a.name).join(', ')}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button type="button" onClick={() => setSelectedMusic(null)} className="font-bold text-lg px-2 flex-shrink-0">&times;</button>
-                                                </div>
-                                            ) : (
-                                                <button type="button" onClick={() => setShowMusicSearch(true)} className="text-sky-500 font-semibold text-sm mt-2 p-1">
-                                                    {t('createPost.addMusic')}
-                                                </button>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className="mt-2 text-center md:text-left">
-                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                                                {t('musicSearch.connectSpotifyMessage')}
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={handleConnectSpotify}
-                                                className="bg-green-500 text-white font-semibold rounded-lg py-1.5 px-4 text-sm hover:bg-green-600 transition-colors"
+                                    {selectedMusic && (
+                                        <div className="flex items-center gap-3 p-3 mt-4 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                                            <img src={selectedMusic.albumArtUrl} alt={selectedMusic.title} className="w-12 h-12 rounded-md object-cover flex-shrink-0" />
+                                            <div className="flex-grow min-w-0">
+                                                <p className="font-semibold text-sm truncate">{selectedMusic.title}</p>
+                                                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{selectedMusic.artist}</p>
+                                            </div>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setSelectedMusic(null)} 
+                                                title={t('createPost.removeMusic')} 
+                                                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-2xl font-light flex-shrink-0"
                                             >
-                                                {t('musicSearch.connectSpotifyButton')}
+                                                &times;
                                             </button>
                                         </div>
                                     )}
+                                    
+                                    <button type="button" onClick={() => setIsMusicSelectorOpen(true)} className="w-full flex items-center gap-3 text-left p-3 mt-4 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-colors">
+                                        <MusicIcon className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                                        <div className="flex-grow">
+                                            <p className="font-semibold text-sm">{selectedMusic ? t('createPost.changeMusic') : t('createPost.addMusic')}</p>
+                                        </div>
+                                    </button>
+
+
+                                    <div className="flex items-center justify-between w-full mt-4 py-2 border-y border-zinc-200 dark:border-zinc-800">
+                                        <div>
+                                            <label htmlFor="vent-mode" className="font-semibold text-sm">{t('createPost.ventMode')}</label>
+                                            <p className="text-xs text-zinc-500 dark:text-zinc-400">{t('createPost.ventModeInfo')}</p>
+                                        </div>
+                                        <label htmlFor="vent-mode" className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                id="vent-mode" 
+                                                className="sr-only peer"
+                                                checked={isVentMode}
+                                                onChange={() => setIsVentMode(!isVentMode)}
+                                            />
+                                            <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                                        </label>
+                                    </div>
+
+                                    {isVentMode && (
+                                        <div className="flex flex-col mt-4 flex-grow min-h-0">
+                                            <input 
+                                                type="text"
+                                                placeholder={t('createPost.searchFollowers')}
+                                                value={followerSearch}
+                                                onChange={e => setFollowerSearch(e.target.value)}
+                                                className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md py-1.5 px-4 text-sm mb-2"
+                                            />
+                                            <div className="flex justify-between items-center mb-2 text-xs font-semibold">
+                                                 <span>{t('createPost.selectedCount', { count: allowedUsers.length })}</span>
+                                                <div>
+                                                    <button onClick={() => setAllowedUsers(followers.map(f => f.id))} className="text-sky-500 px-1">{t('createPost.selectAll')}</button>
+                                                    <button onClick={() => setAllowedUsers([])} className="text-sky-500 px-1">{t('createPost.deselectAll')}</button>
+                                                </div>
+                                            </div>
+                                            <div className="flex-grow overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-md">
+                                                {loadingFollowers ? <p className="p-4 text-center text-sm text-zinc-500">Loading...</p> : 
+                                                filteredFollowers.length > 0 ? (
+                                                    filteredFollowers.map(follower => (
+                                                        <label key={follower.id} className="flex items-center p-2 gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer">
+                                                            <input type="checkbox" checked={allowedUsers.includes(follower.id)} onChange={() => handleAllowedUserToggle(follower.id)} className="w-4 h-4 text-sky-600 bg-zinc-100 border-zinc-300 rounded focus:ring-sky-500 dark:focus:ring-sky-600 dark:ring-offset-zinc-800 focus:ring-2 dark:bg-zinc-700 dark:border-zinc-600" />
+                                                            <img src={follower.avatar} alt={follower.username} className="w-8 h-8 rounded-full object-cover" />
+                                                            <span className="text-sm font-medium">{follower.username}</span>
+                                                        </label>
+                                                    ))
+                                                ) : (
+                                                    <p className="p-4 text-center text-sm text-zinc-500">{t('createPost.noFollowersFound')}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                     {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
                                 </div>
                             </div>
@@ -307,17 +306,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onPo
                     </div>
                 </div>
             </div>
-            <MusicSearchModal
-                isOpen={showMusicSearch}
-                onClose={() => setShowMusicSearch(false)}
-                onSelectMusic={handleSelectMusic}
-                onConnect={handleConnectSpotify}
-            />
-            <FollowerSelectionModal
-                isOpen={isFollowerModalOpen}
-                onClose={() => setIsFollowerModalOpen(false)}
-                onSelectFollowers={setAllowedViewers}
-                initiallySelected={allowedViewers}
+            <MusicSelectorModal
+                isOpen={isMusicSelectorOpen}
+                onClose={() => setIsMusicSelectorOpen(false)}
+                onSelect={handleMusicSelect}
             />
         </>
     )

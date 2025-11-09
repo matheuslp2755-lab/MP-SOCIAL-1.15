@@ -1,4 +1,3 @@
-
 {
   "common": {
     "online": "Online",
@@ -126,16 +125,30 @@
     "captionLabel": "Escreva uma legenda...",
     "dragPhotos": "Arraste as fotos aqui",
     "selectFromComputer": "Selecionar do computador",
-    "addMusic": "Adicionar música"
+    "ventMode": "Modo Desabafo",
+    "ventModeInfo": "Apenas seguidores selecionados verão esta publicação.",
+    "searchFollowers": "Pesquisar seguidores...",
+    "noFollowersFound": "Nenhum seguidor encontrado.",
+    "selectAll": "Selecionar Todos",
+    "deselectAll": "Desmarcar Todos",
+    "selectedCount": "{count} selecionados",
+    "addMusic": "Adicionar Música",
+    "changeMusic": "Alterar Música",
+    "removeMusic": "Remover Música"
   },
-  "musicSearch": {
-    "placeholder": "Buscar uma música...",
+  "musicSelector": {
+    "title": "Selecionar Música",
+    "searchPlaceholder": "Buscar por faixas e artistas...",
+    "noResults": "Nenhuma música encontrada.",
+    "add": "Adicionar",
+    "searchError": "Não foi possível buscar músicas. Tente novamente.",
     "searching": "Buscando...",
-    "noResults": "Nenhum resultado encontrado.",
-    "apiError": "Não foi possível carregar músicas agora.",
-    "connectSpotifyMessage": "Para buscar músicas, conecte-se ao Spotify.",
-    "connectSpotifyButton": "Conectar com Spotify",
-    "selectButton": "Selecionar"
+    "connectTitle": "Conecte Sua Conta do Spotify",
+    "connectInfo": "Procure qualquer música da biblioteca do Spotify e adicione à sua publicação.",
+    "connectButton": "Conectar com Spotify",
+    "disconnectButton": "Desconectar",
+    "connectedAs": "Conectado como {username}",
+    "loadingProfile": "Carregando perfil..."
   },
   "messages": {
     "title": "Mensagens",
@@ -155,10 +168,11 @@
     "deleteBody": "Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
     "newMessageTitle": "Nova Mensagem",
     "searchUsers": "Procurar usuários...",
-    "videoTooLong": "O vídeo não pode ter mais de 30 segundos.",
+    "videoTooLongError": "O vídeo deve ter 30 segundos ou menos.",
     "uploadError": "Falha ao enviar a mídia. Por favor, tente novamente.",
-    "photo": "Imagem",
-    "video": "Vídeo"
+    "lastMessagePhoto": "📷 Foto",
+    "lastMessageVideo": "📹 Vídeo",
+    "sending": "Enviando..."
   },
   "crystal": {
     "formed": "💎 Um novo Cristal de Conexão foi formado!",
@@ -181,7 +195,8 @@
     "selectFromComputer": "Selecionar do computador",
     "invalidFileError": "Por favor, selecione um arquivo de imagem ou vídeo válido.",
     "publishError": "Falha ao criar o pulso. Por favor, tente novamente.",
-    "addMusic": "Adicionar música"
+    "ventMode": "Modo Desabafo",
+    "ventModeInfo": "Apenas seguidores selecionados verão este pulso."
   },
   "pulseViewer": {
     "previous": "Pulso anterior",
@@ -199,16 +214,6 @@
   },
   "welcome": {
     "title": "Bem vindo ao Mundo MP 1.15"
-  },
-  "ventingMode": {
-    "title": "Modo Desabafo",
-    "description": "Apenas seguidores selecionados poderão ver esta publicação.",
-    "selectAudience": "Selecionar Público",
-    "audienceButton": "Selecionar quem pode ver",
-    "audienceSelected": "{count} pessoas selecionadas",
-    "done": "Concluir",
-    "searchFollowers": "Pesquisar seguidores...",
-    "noFollowersFound": "Nenhum seguidor encontrado."
   },
   "footer": {
     "language": "Português (Brasil)",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { updateProfile } from 'firebase/auth';
 import {
@@ -61,11 +60,9 @@ type Post = {
     imageUrl: string;
     caption: string;
     timestamp: { seconds: number; nanoseconds: number };
-    musicName?: string;
-    musicArtist?: string;
-    spotifyTrackId?: string;
-    isVenting?: boolean;
-    allowedViewers?: string[];
+    userId?: string;
+    isVentMode?: boolean;
+    allowedUsers?: string[];
 };
 
 type Pulse = {
@@ -74,14 +71,8 @@ type Pulse = {
     legenda: string;
     createdAt: { seconds: number; nanoseconds: number };
     authorId: string;
-    musica?: {
-        nome: string;
-        artista: string;
-        preview: string;
-        spotifyTrackId?: string;
-    };
-    isVenting?: boolean;
-    allowedViewers?: string[];
+    isVentMode?: boolean;
+    allowedUsers?: string[];
 };
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => {
@@ -116,12 +107,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
 
             const followersQuery = collection(db, 'users', userId, 'followers');
             const followingQuery = collection(db, 'users', userId, 'following');
-            
-            const [followersSnap, followingSnap] = await Promise.all([
+            // Removed orderBy to prevent potential index-related permission errors
+            const postsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
+            const pulsesQuery = query(collection(db, 'pulses'), where('authorId', '==', userId));
+
+            // FIX: Corrected variable names from result variables (postsSnap, pulsesSnap)
+            // to query variables (postsQuery, pulsesQuery) to resolve "used before declaration" errors.
+            const [followersSnap, followingSnap, postsSnap, pulsesSnap] = await Promise.all([
                 getDocs(followersQuery),
                 getDocs(followingQuery),
+                getDocs(postsQuery),
+                getDocs(pulsesQuery)
             ]);
             
+            setStats({ posts: postsSnap.size, followers: followersSnap.size, following: followingSnap.size });
+
             let userIsFollowing = false;
             if (currentUser && currentUser.uid !== userId) {
                 const followingDoc = await getDoc(doc(db, 'users', currentUser.uid, 'following', userId));
@@ -134,50 +134,27 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
                 }
             }
             
-            const isOwnProfile = currentUser?.uid === userId;
-            const canViewContent = isOwnProfile || !userData.isPrivate || userIsFollowing;
-            
-            if (canViewContent) {
-                 const postsCollection = collection(db, 'posts');
-                 const pulsesCollection = collection(db, 'pulses');
-                 
-                 const publicPostsQuery = query(postsCollection, where('userId', '==', userId), where('isVenting', '==', false));
-                 const publicPulsesQuery = query(pulsesCollection, where('authorId', '==', userId), where('isVenting', '==', false));
-                 
-                 const queriesToRun = [getDocs(publicPostsQuery), getDocs(publicPulsesQuery)];
-
-                 if (isOwnProfile) {
-                     queriesToRun.push(getDocs(query(postsCollection, where('userId', '==', userId), where('isVenting', '==', true))));
-                     queriesToRun.push(getDocs(query(pulsesCollection, where('authorId', '==', userId), where('isVenting', '==', true))));
-                 } else {
-                     queriesToRun.push(getDocs(query(postsCollection, where('userId', '==', userId), where('allowedViewers', 'array-contains', currentUser?.uid))));
-                     queriesToRun.push(getDocs(query(pulsesCollection, where('authorId', '==', userId), where('allowedViewers', 'array-contains', currentUser?.uid))));
-                 }
-                 
-                 const [publicPostsSnap, publicPulsesSnap, ventingPostsSnap, ventingPulsesSnap] = await Promise.all(queriesToRun);
-
-                 const allPostsMap = new Map<string, Post>();
-                 publicPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
-                 ventingPostsSnap.docs.forEach(doc => allPostsMap.set(doc.id, { id: doc.id, ...doc.data() } as Post));
-                 const userPosts = Array.from(allPostsMap.values());
-                 userPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                 setPosts(userPosts);
-
-                 const allPulsesMap = new Map<string, Pulse>();
-                 publicPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as Pulse));
-                 ventingPulsesSnap.docs.forEach(doc => allPulsesMap.set(doc.id, { id: doc.id, ...doc.data() } as Pulse));
-                 const userPulses = Array.from(allPulsesMap.values());
-                 userPulses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                 setPulses(userPulses);
-
-                 setStats({ posts: userPosts.length, followers: followersSnap.size, following: followingSnap.size });
-
+            if (currentUser?.uid === userId || !userData.isPrivate || userIsFollowing) {
+                const userPosts = postsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post));
+                const filteredPosts = userPosts.filter(post => {
+                    if (currentUser?.uid === userId) return true; // My profile, see everything
+                    if (!post.isVentMode) return true; // Public post
+                    return post.allowedUsers?.includes(currentUser!.uid); // I'm allowed to see this vent post
+                });
+                filteredPosts.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                setPosts(filteredPosts);
+                
+                const userPulses = pulsesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pulse));
+                const filteredPulses = userPulses.filter(pulse => {
+                    if (currentUser?.uid === userId) return true;
+                    if (!pulse.isVentMode) return true;
+                    return pulse.allowedUsers?.includes(currentUser!.uid);
+                });
+                filteredPulses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                setPulses(filteredPulses);
             } else {
                 setPosts([]);
                 setPulses([]);
-                const allPostsQuery = query(collection(db, 'posts'), where('userId', '==', userId));
-                const allPostsSnap = await getDocs(allPostsQuery);
-                setStats({ posts: allPostsSnap.size, followers: followersSnap.size, following: followingSnap.size });
             }
 
             setLoading(false);
@@ -356,7 +333,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
         console.log("Background avatar update finished.");
     };
 
-    const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean }) => {
+    const handleProfileUpdate = async ({ username, bio, avatarFile, isPrivate }: { username: string; bio: string; avatarFile: File | null; isPrivate: boolean; }) => {
         if (!currentUser) return;
         setIsUpdating(true);
         
@@ -419,8 +396,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
     const handleDeletePulse = async (pulseToDelete: Pulse) => {
         try {
             const pulseRef = doc(db, 'pulses', pulseToDelete.id);
-            const mediaPath = decodeURIComponent(pulseToDelete.mediaUrl.split('/o/')[1].split('?')[0]);
-            const mediaRef = storageRef(storage, mediaPath);
+            const mediaRef = storageRef(storage, pulseToDelete.mediaUrl);
             
             await deleteDoc(pulseRef);
             await deleteObject(mediaRef);
@@ -574,7 +550,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onStartMessage }) => 
             <PulseViewerModal
                 pulses={pulses}
                 initialPulseIndex={pulses.findIndex(p => p.id === viewingPulse.id)}
-                authorInfo={{ username: user.username, avatar: user.avatar, id: userId }}
+                authorInfo={{ id: userId, username: user.username, avatar: user.avatar }}
                 onClose={() => setViewingPulse(null)}
                 onDelete={(pulseToDelete) => {
                     if (pulses.length === 1) {

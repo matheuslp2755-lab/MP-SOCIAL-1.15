@@ -1,11 +1,8 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, db, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, storage, storageRef, deleteObject, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, where, getDocs, limit, writeBatch, getDoc, setDoc } from '../../firebase';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTimeAgo } from '../../hooks/useTimeAgo';
 import PostViewsModal from './PostViewsModal';
-import MusicPlayer from '../common/MusicPlayer';
 
 type PostType = {
     id: string;
@@ -16,10 +13,6 @@ type PostType = {
     caption: string;
     likes: string[];
     timestamp: { seconds: number; nanoseconds: number };
-    musicName?: string;
-    musicArtist?: string;
-    spotifyTrackId?: string;
-    musicPreviewUrl?: string;
 };
 
 type CommentType = {
@@ -42,6 +35,10 @@ const LikeIcon: React.FC<{className?: string, isLiked: boolean, title: string}> 
 
 const CommentIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
     <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></path></svg>
+);
+
+const ShareIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
+  <svg aria-label={title} className={className} fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>{title}</title><line fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" strokeLinejoin="round" strokeWidth="2"></polygon></svg>
 );
 
 const MoreIcon: React.FC<{className?: string, title: string}> = ({ className, title }) => (
@@ -69,9 +66,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   const [isViewsModalOpen, setIsViewsModalOpen] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
-  const [isIntersecting, setIsIntersecting] = useState(false);
   const postRef = useRef<HTMLElement>(null);
-  const viewRegistered = useRef(false);
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionResults, setMentionResults] = useState<UserSearchResult[]>([]);
@@ -96,22 +91,21 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     return () => unsubscribe();
   }, [post.id]);
-  
+
   useEffect(() => {
-    if (!postRef.current || !currentUser) {
+    if (!postRef.current || !currentUser || currentUser.uid === post.userId) {
         return;
     }
 
     const observer = new IntersectionObserver(
-        ([entry]) => {
-            setIsIntersecting(entry.isIntersecting);
-            if (entry.isIntersecting && !viewRegistered.current && currentUser.uid !== post.userId) {
-                viewRegistered.current = true;
+        async ([entry]) => {
+            if (entry.isIntersecting) {
                 const viewRef = doc(db, 'posts', post.id, 'views', currentUser.uid);
-                setDoc(viewRef, {
+                await setDoc(viewRef, {
                     userId: currentUser.uid,
                     viewedAt: serverTimestamp()
-                }).catch(console.error);
+                });
+                observer.unobserve(entry.target);
             }
         },
         {
@@ -137,7 +131,7 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
 
     return () => unsubscribe();
   }, [post.id]);
-
+  
   const handleLikeToggle = async () => {
     if (!currentUser) return;
     
@@ -386,15 +380,11 @@ const Post: React.FC<PostProps> = ({ post, onPostDeleted }) => {
                 <button>
                     <CommentIcon title={t('post.comment')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
                 </button>
+                <button>
+                    <ShareIcon title={t('post.share')} className="w-6 h-6 hover:text-zinc-500 dark:hover:text-zinc-400" />
+                </button>
             </div>
-            {post.musicPreviewUrl && (
-                <MusicPlayer 
-                  trackName={post.musicName}
-                  artistName={post.musicArtist}
-                  previewUrl={post.musicPreviewUrl}
-                  shouldPlay={isIntersecting}
-                />
-            )}
+
             <div className="text-sm space-y-1">
                 <div className="flex items-center gap-2 font-semibold">
                     <span>{likesCount.toLocaleString()} {t('post.likes')}</span>
